@@ -75,6 +75,26 @@ body {
   cursor: pointer;
 }
 
+    .password-wrapper .togglePassword {
+      padding: 0 16px;
+      font-size: 14px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #d33;
+      height: 100%;
+      border-left: 1.5px solid #eee;
+      transition: background 0.2s, color 0.2s;
+      display: flex;
+      align-items: center;
+    }
+    .password-wrapper .togglePassword:hover,
+    .password-wrapper .togglePassword:focus {
+      background: #d33;
+      color: white;
+      outline: none;
+    }
+
 .menu-item:hover {
   background-color: rgba(220, 38, 38, 0.1);
   color: #dc2626;
