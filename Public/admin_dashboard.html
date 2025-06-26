@@ -574,6 +574,25 @@
     </div>
   </div>
 
+  <!-- Guardian Düzenle Modalı -->
+  <div id="editGuardianModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); justify-content:center; align-items:center;">
+    <div class="registration-container" style="position:relative; margin:auto;">
+      <button id="closeEditGuardianModalBtn" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+      <h1>Veli Bilgilerini Düzenle</h1>
+      <form id="editGuardianForm">
+        <label for="editGuardianFirstName">Ad</label>
+        <input type="text" id="editGuardianFirstName" name="firstName" required />
+        <label for="editGuardianLastName">Soyad</label>
+        <input type="text" id="editGuardianLastName" name="lastName" required />
+        <label for="editGuardianEmail">Email</label>
+        <input type="email" id="editGuardianEmail" name="email" required />
+        <label for="editGuardianPhone">Telefon</label>
+        <input type="tel" id="editGuardianPhone" name="phone" required />
+        <button type="submit">Kaydet</button>
+      </form>
+    </div>
+  </div>
+
   <!-- intl-tel-input CDN -->
   <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.2/build/js/intlTelInput.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.2/build/js/utils.js"></script>

@@ -230,15 +230,10 @@ window.displayGuardianList = function displayGuardianList(guardians) {
           <div class="guardian-details">📧 ${guardian.Email || 'Belirtilmemiş'}</div>
           <div class="guardian-details">📞 ${guardian.Phone || 'Belirtilmemiş'}</div>
           ${studentText}
-          <div class="guardian-status">❌ Durum: Pasif</div>
         </div>
         <div class="guardian-actions">
-          <button class="reactivate-btn" onclick="window.reactivateGuardian(${guardian.Guardian_ID}, '${guardian.First_Name} ${guardian.Last_Name}')">
-            ✅ Aktifleştir
-          </button>
-          <button class="delete-btn" onclick="window.permanentlyDeleteGuardian(${guardian.Guardian_ID}, '${guardian.First_Name} ${guardian.Last_Name}')">
-            🗑️ Kalıcı Sil
-          </button>
+          <button class="edit-btn" onclick="editGuardian(${guardian.Guardian_ID})">✏️ Düzenle</button>
+          <button class="delete-btn" onclick="window.deleteGuardian(${guardian.Guardian_ID}, '${guardian.First_Name} ${guardian.Last_Name}')">⏸️ Pasife Al</button>
         </div>
       </div>
     `;
@@ -266,10 +261,22 @@ window.deleteGuardian = async function deleteGuardian(guardianId, guardianName) 
   }
 }
 
-window.editGuardian = function editGuardian(guardianId, guardianName) {
-  localStorage.setItem('editGuardianId', guardianId);
-  alert('Veli düzenleme eklemedim daha ' + guardianId); 
-  // window.location.href = '/edit_guardian.html';
+window.editGuardian = function editGuardian(guardianId) {
+  // Find guardian data from the currently loaded list
+  let guardian = null;
+  if (window.allGuardiansData) {
+    guardian = window.allGuardiansData.find(g => g.Guardian_ID === guardianId);
+  }
+  if (!guardian) {
+    alert('Veli verisi bulunamadı.');
+    return;
+  }
+  document.getElementById('editGuardianFirstName').value = guardian.First_Name || '';
+  document.getElementById('editGuardianLastName').value = guardian.Last_Name || '';
+  document.getElementById('editGuardianEmail').value = guardian.Email || '';
+  document.getElementById('editGuardianPhone').value = guardian.Phone || '';
+  window.editingGuardianId = guardianId;
+  document.getElementById('editGuardianModal').style.display = 'flex';
 }
 
 window.searchGuardians = function searchGuardians() {
@@ -432,6 +439,51 @@ window.initGuardianModal = function initGuardianModal() {
       });
     });
   }
+}
+
+// Modal open/close logic for edit guardian
+const editGuardianModal = document.getElementById('editGuardianModal');
+const closeEditGuardianModalBtn = document.getElementById('closeEditGuardianModalBtn');
+if (editGuardianModal && closeEditGuardianModalBtn) {
+  closeEditGuardianModalBtn.addEventListener('click', () => {
+    editGuardianModal.style.display = 'none';
+  });
+  window.addEventListener('click', (e) => {
+    if (e.target === editGuardianModal) editGuardianModal.style.display = 'none';
+  });
+}
+
+// Submit edit guardian form
+const editGuardianForm = document.getElementById('editGuardianForm');
+if (editGuardianForm) {
+  editGuardianForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const guardianId = window.editingGuardianId;
+    const data = {
+      firstName: editGuardianForm.editGuardianFirstName.value.trim(),
+      lastName: editGuardianForm.editGuardianLastName.value.trim(),
+      email: editGuardianForm.editGuardianEmail.value.trim(),
+      phone: editGuardianForm.editGuardianPhone.value.trim()
+    };
+    try {
+      const response = await fetch(`/api/guardians/${guardianId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (response.ok) {
+        alert('Veli bilgileri güncellendi.');
+        editGuardianModal.style.display = 'none';
+        if (typeof window.loadGuardianList === 'function') window.loadGuardianList();
+      } else {
+        alert(result.error || 'Güncelleme başarısız.');
+      }
+    } catch (err) {
+      alert('Sunucu hatası: ' + err.message);
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
