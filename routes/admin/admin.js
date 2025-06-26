@@ -5,7 +5,7 @@ import {
   getAdminGuardians, deleteGuardian, searchGuardians, getPassiveGuardians, reactivateGuardian, permanentlyDeleteGuardian
 } from './admin_guardian_modules.js';
 import { 
-  getAdminTeachers, deleteTeacher, getPassiveTeachers, reactivateTeacher, permanentlyDeleteTeacher
+  getAdminTeachers, deleteTeacher, getPassiveTeachers, reactivateTeacher, permanentlyDeleteTeacher, updateTeacher
 } from './admin_teacher_modules.js';
 import { getDashboardStats } from './admin_dashboard_modules.js';
 
@@ -29,5 +29,6 @@ export {
   permanentlyDeleteTeacher,
   getDashboardStats,
   updateStudent,
-  changeStudentCourse
+  changeStudentCourse,
+  updateTeacher
 }; 

@@ -311,9 +311,93 @@ window.deleteTeacher = async function deleteTeacher(teacherId, teacherName) {
 }
 
 window.editTeacher = function editTeacher(teacherId, teacherName) {
-  localStorage.setItem('editTeacherId', teacherId);
-  alert('Öğretmen düzenleme eklemedim daha ' + teacherId);
-  // window.location.href = '/edit_teacher.html';
+  // Find teacher data from the currently loaded list
+  let teacher = null;
+  if (window.allTeachersData) {
+    teacher = window.allTeachersData.find(t => t.Teacher_ID === teacherId);
+  }
+  if (!teacher) {
+    alert('Öğretmen verisi bulunamadı.');
+    return;
+  }
+  document.getElementById('editTeacherFirstName').value = teacher.First_Name || '';
+  document.getElementById('editTeacherLastName').value = teacher.Last_Name || '';
+  document.getElementById('editTeacherEmail').value = teacher.Email || '';
+  document.getElementById('editTeacherPhone').value = teacher.Phone || '';
+  document.getElementById('editTeacherSalary').value = teacher.Salary || '';
+  document.getElementById('editTeacherSSN').value = teacher.SocialSecurityNumber || '';
+  document.getElementById('editTeacherEmploymentType').value = teacher.EmploymentType || '';
+  document.getElementById('editTeacherStartDate').value = teacher.StartDate ? teacher.StartDate.split('T')[0] : '';
+  document.getElementById('editTeacherEndDate').value = teacher.EndDate ? teacher.EndDate.split('T')[0] : '';
+  document.getElementById('editTeacherExperience').value = teacher.Experience || '';
+  window.editingTeacherId = teacherId;
+  // Load categories into the category select
+  fetch('/api/categories', { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      const catSelect = document.getElementById('editTeacherCategoryId');
+      catSelect.innerHTML = '<option value="">Kategori Seçiniz</option>';
+      data.categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.Category_ID;
+        opt.textContent = cat.Category_Name;
+        catSelect.appendChild(opt);
+      });
+      if (teacher.Category_ID) catSelect.value = teacher.Category_ID;
+    });
+  document.getElementById('editTeacherModal').style.display = 'flex';
+}
+
+// Modal open/close logic for edit teacher
+const editTeacherModal = document.getElementById('editTeacherModal');
+const closeEditTeacherModalBtn = document.getElementById('closeEditTeacherModalBtn');
+if (editTeacherModal && closeEditTeacherModalBtn) {
+  closeEditTeacherModalBtn.addEventListener('click', () => {
+    editTeacherModal.style.display = 'none';
+  });
+  window.addEventListener('click', (e) => {
+    if (e.target === editTeacherModal) editTeacherModal.style.display = 'none';
+  });
+}
+
+// Submit edit teacher form
+const editTeacherForm = document.getElementById('editTeacherForm');
+if (editTeacherForm) {
+  editTeacherForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const teacherId = window.editingTeacherId;
+    const data = {
+      firstName: editTeacherForm.editTeacherFirstName.value.trim(),
+      lastName: editTeacherForm.editTeacherLastName.value.trim(),
+      email: editTeacherForm.editTeacherEmail.value.trim(),
+      phone: editTeacherForm.editTeacherPhone.value.trim(),
+      salary: editTeacherForm.editTeacherSalary.value.trim() || null,
+      socialSecurityNumber: editTeacherForm.editTeacherSSN.value.trim() || null,
+      employmentType: editTeacherForm.editTeacherEmploymentType.value || null,
+      categoryId: editTeacherForm.editTeacherCategoryId.value || null,
+      startDate: editTeacherForm.editTeacherStartDate.value || null,
+      endDate: editTeacherForm.editTeacherEndDate.value || null,
+      experience: editTeacherForm.editTeacherExperience.value || null
+    };
+    try {
+      const response = await fetch(`/api/admin/teachers/${teacherId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (response.ok) {
+        alert('Öğretmen bilgileri güncellendi.');
+        editTeacherModal.style.display = 'none';
+        if (typeof window.loadTeacherList === 'function') window.loadTeacherList();
+      } else {
+        alert(result.error || 'Güncelleme başarısız.');
+      }
+    } catch (err) {
+      alert('Sunucu hatası: ' + err.message);
+    }
+  });
 }
 
 window.searchTeachers = function searchTeachers() {

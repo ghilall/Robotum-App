@@ -593,6 +593,84 @@
     </div>
   </div>
 
+  <!-- Öğretmen Düzenle Modalı -->
+  <div id="editTeacherModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); justify-content:center; align-items:center;">
+    <div class="registration-container" style="position:relative; margin:auto; max-width:800px; width:90vw; min-width:350px; background:white; padding:40px 30px; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.18); overflow-y:auto; max-height:95vh;">
+      <button id="closeEditTeacherModalBtn" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:28px; cursor:pointer;">&times;</button>
+      <h1 style="text-align:center; margin-bottom:24px;">Öğretmen Bilgilerini Düzenle</h1>
+      <form id="editTeacherForm">
+        <div class="row" style="display:flex; gap:20px; margin-bottom:15px; flex-wrap:wrap;">
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherFirstName">Ad:</label>
+            <input type="text" id="editTeacherFirstName" name="firstName" required />
+          </div>
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherLastName">Soyad:</label>
+            <input type="text" id="editTeacherLastName" name="lastName" required />
+          </div>
+        </div>
+        <div class="row" style="display:flex; gap:20px; margin-bottom:15px; flex-wrap:wrap;">
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherPhone">Telefon Numarası:</label>
+            <input type="tel" id="editTeacherPhone" name="phone" required />
+          </div>
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherEmail">Email Adresi:</label>
+            <input type="email" id="editTeacherEmail" name="email" required />
+          </div>
+        </div>
+        <div class="row" style="display:flex; gap:20px; margin-bottom:15px; flex-wrap:wrap;">
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherSalary">Maaş:</label>
+            <input type="text" id="editTeacherSalary" name="salary" required />
+          </div>
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherSSN">TC / SGK No:</label>
+            <input type="text" id="editTeacherSSN" name="socialSecurityNumber" required />
+          </div>
+        </div>
+        <div class="row" style="display:flex; gap:20px; margin-bottom:15px; flex-wrap:wrap;">
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherEmploymentType">Çalışma Türü:</label>
+            <select id="editTeacherEmploymentType" name="employmentType" required>
+              <option value="">Seçiniz</option>
+              <option value="Tam Zamanlı">Tam Zamanlı</option>
+              <option value="Yarı Zamanlı">Yarı Zamanlı</option>
+            </select>
+          </div>
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherCategoryId">Kategori:</label>
+            <select id="editTeacherCategoryId" name="categoryId" required>
+              <option value="">Kategori Seçiniz</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="display:flex; gap:20px; margin-bottom:15px; flex-wrap:wrap;">
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherStartDate">Başlangıç Tarihi:</label>
+            <input type="date" id="editTeacherStartDate" name="startDate" required />
+          </div>
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherEndDate">Bitiş Tarihi (opsiyonel):</label>
+            <input type="date" id="editTeacherEndDate" name="endDate" />
+          </div>
+        </div>
+        <div class="row" style="display:flex; gap:20px; margin-bottom:15px; flex-wrap:wrap;">
+          <div class="half" style="flex:1; min-width:280px;">
+            <label for="editTeacherExperience">Deneyim:</label>
+            <select id="editTeacherExperience" name="experience" required>
+              <option value="">Öğretmen deneyimi seçiniz</option>
+              <option value="Öğretmen">Baş Öğretmen</option>
+              <option value="Yardımcı">Yardımcı Öğretmen</option>
+              <option value="Stajyer">Stajyer</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit">Kaydet</button>
+      </form>
+    </div>
+  </div>
+
   <!-- intl-tel-input CDN -->
   <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.2/build/js/intlTelInput.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.2/build/js/utils.js"></script>
