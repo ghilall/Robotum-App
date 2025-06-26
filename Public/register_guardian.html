@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>Kayıt Ol</title>
+  <title>Veli Ekle</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -30,43 +30,35 @@
       display: block;
       margin-bottom: 6px;
     }
-    #confirmPassword {
-  margin-bottom: 20px; 
-}
     select#occupation {
-  width: 100%;        
-  padding: 10px 10px; 
-  font-size: 16px;
-  border: 1.5px solid;;
-  border-radius: 5px;
-  background-color: white;
-  color: #333;
-  cursor: pointer;
-  box-sizing: border-box;
-  align-items: center;
-  transition: border-color 0.3s;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url('data:image/svg+xml;utf8,<svg fill="%23e74c3c" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px 16px;
-}
-
-select#occupation:hover {
-  border-color: #16a085;  
-}
-
-select#occupation:focus {
-  outline: none;
-  border-color: #16a085;
-}
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1.5px solid;
+      border-radius: 5px;
+      background-color: white;
+      color: #333;
+      cursor: pointer;
+      box-sizing: border-box;
+      appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%23e74c3c" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px 16px;
+    }
+    select#occupation:hover {
+      border-color: #16a085;
+    }
+    select#occupation:focus {
+      outline: none;
+      border-color: #16a085;
+    }
     input[type="text"],
     input[type="email"],
-    input[type="password"] {
+    input[type="password"],
+    input[type="tel"] {
       width: 100%;
-      padding: 12px 12px;
+      padding: 12px;
       font-size: 16px;
       border: 1.5px solid #ccc;
       border-radius: 5px;
@@ -74,15 +66,14 @@ select#occupation:focus {
       margin-bottom: 8px;
       box-sizing: border-box;
     }
-    input[type="text"]:focus,
-    input[type="email"]:focus,
-    input[type="password"]:focus {
+    input:focus {
       border-color: #16a085;
       outline: none;
+      box-shadow: none;
     }
-    button {
+    button[type="submit"] {
       width: 100%;
-      background-color: #e74c3c; /* red */
+      background-color: #e74c3c;
       color: white;
       font-size: 18px;
       padding: 12px 0;
@@ -92,7 +83,7 @@ select#occupation:focus {
       transition: background-color 0.3s;
       margin-top: 15px;
     }
-    button:hover {
+    button[type="submit"]:hover {
       background-color: #c0392b;
     }
     .error {
@@ -112,10 +103,61 @@ select#occupation:focus {
     p a:hover {
       text-decoration: underline;
     }
+
+    /* Şifre input + buton birlikte kutu şeklinde görünür */
+    .password-wrapper {
+      flex: 1;
+      min-width: 280px;
+    }
+    .password-wrapper label {
+      margin-bottom: 6px;
+      font-weight: bold;
+      display: block;
+    }
+    .password-input-container {
+      display: flex;
+      align-items: center;
+      border: 1.5px solid #ccc;
+      border-radius: 5px;
+      overflow: hidden;
+      height: 48px;
+    }
+    .password-input-container input {
+      flex: 1;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .password-input-container input:focus {
+      border: none;
+      outline: none;
+    }
+    .togglePassword {
+      background-color: #f5f5f5;
+      color: #16a085;
+      border: none;
+      padding: 0 16px;
+      height: 100%;
+      font-size: 14px;
+      cursor: pointer;
+      border-left: 1.5px solid #ccc;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .togglePassword:hover,
+    .togglePassword:focus {
+      background-color: #16a085;
+      color: white;
+      outline: none;
+    }
   </style>
+
+  <!-- intl-tel-input stil dosyası -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.2/build/css/intlTelInput.min.css" />
 </head>
 <body>
-<h1 style="text-align:center;">Kayıt Ol</h1>
+<h1 style="text-align:center;">Veli Ekle</h1>
 <form id="registerForm">
   <div class="row">
     <div class="half">
@@ -131,7 +173,8 @@ select#occupation:focus {
   <div class="row">
     <div class="half">
       <label for="phone">Telefon Numarası:</label>
-      <input type="text" id="phone" name="phone" required />
+      <input type="tel" id="phone" name="phone" required placeholder="Telefon numarası" />
+      <div id="phoneError" class="error">Geçersiz telefon numarası.</div>
     </div>
     <div class="half">
       <label for="email">Email Adresi:</label>
@@ -141,17 +184,26 @@ select#occupation:focus {
   </div>
 
   <div class="row">
-    <div style="flex: 1; min-width: 100%; max-width: 400px; margin: 0 auto;">
+    <div class="password-wrapper">
       <label for="password">Şifre:</label>
-      <input type="password" id="password" name="password" required />
+      <div class="password-input-container">
+        <input type="password" id="password" name="password" required />
+        <button type="button" class="togglePassword">Göster</button>
+      </div>
     </div>
-    <div class="half">
+    <div class="password-wrapper">
       <label for="confirmPassword">Şifre (Tekrar):</label>
-      <input type="password" id="confirmPassword" name="confirmPassword" required />
-    
+      <div class="password-input-container">
+        <input type="password" id="confirmPassword" name="confirmPassword" required />
+        <button type="button" class="togglePassword">Göster</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
     <div class="half">
       <label for="occupation">Meslek:</label>
-      <select id="occupation" name="occupation" required >
+      <select id="occupation" name="occupation" required>
         <option value="">Meslek Seçiniz</option>
         <option value="1">Öğretmen</option>
         <option value="2">İşçi</option>
@@ -167,71 +219,101 @@ select#occupation:focus {
         <option value="12">Diş Hekimi</option>
         <option value="13">İşletme Sahibi</option>
         <option value="14">Diğer</option>
-        </select>
+      </select>
     </div>
   </div>
 
-  <button type="submit">Kayıt Ol</button>
+  <button type="submit">Veliyi Kaydet</button>
   <div id="passwordError" class="error">Şifreler eşleşmiyor. Lütfen aynı şifreyi girin.</div>
   <div id="registerError" class="error">Kayıt başarısız oldu.</div>
 </form>
 
-<p>Zaten üye misiniz? <a href="/login.html">Giriş Yap</a></p>
 
-  <script>
-    const form = document.getElementById('registerForm');
-    const passwordError = document.getElementById('passwordError');
-    const emailError = document.getElementById('emailError');
-    const registerError = document.getElementById('registerError');
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      passwordError.style.display = 'none';
-      emailError.style.display = 'none';
-      registerError.style.display = 'none';
+<!-- intl-tel-input JS -->
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.2/build/js/intlTelInput.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.2/build/js/utils.js"></script>
 
-      const password = form.password.value;
-      const confirmPassword = form.confirmPassword.value;
+<script>
+  const form = document.getElementById('registerForm');
+  const passwordError = document.getElementById('passwordError');
+  const emailError = document.getElementById('emailError');
+  const registerError = document.getElementById('registerError');
+  const phoneError = document.getElementById('phoneError');
+  const phoneInput = document.querySelector("#phone");
 
-      if (password !== confirmPassword) {
-        passwordError.style.display = 'block';
-        return;
-      }
+  const iti = window.intlTelInput(phoneInput, {
+    initialCountry: "tr",
+    separateDialCode: true,
+    nationalMode: true,
+    autoPlaceholder: "polite",
+    formatOnDisplay: true,
+    utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.2/build/js/utils.js"
+  });
 
-      //Data to be sent to the server
-      const data = {
-        firstName: form.firstName.value,
-        lastName: form.lastName.value,
-        phone: form.phone.value,
-        email: form.email.value,
-        password: password,
-        occupation: parseInt(form.occupation.value)
-      };
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    passwordError.style.display = 'none';
+    emailError.style.display = 'none';
+    registerError.style.display = 'none';
+    phoneError.style.display = 'none';
 
-      try {
-        const response = await fetch('/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
+    if (!iti.isValidNumber()) {
+      phoneError.style.display = 'block';
+      return;
+    }
 
-        const result = await response.json();
+    const password = form.password.value;
+    const confirmPassword = form.confirmPassword.value;
+    if (password !== confirmPassword) {
+      passwordError.style.display = 'block';
+      return;
+    }
 
-        if (!response.ok) {
-          if (result.error && result.error.toLowerCase().includes('email')) {
-            emailError.style.display = 'block';
-          } else {
-            registerError.textContent = result.error || 'Kayıt başarısız oldu.';
-            registerError.style.display = 'block';
-          }
+    const data = {
+      firstName: form.firstName.value,
+      lastName: form.lastName.value,
+      phone: iti.getNumber(),
+      email: form.email.value,
+      password: password,
+      occupation: parseInt(form.occupation.value)
+    };
+
+    try {
+      const response = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        if (result.error && result.error.toLowerCase().includes('email')) {
+          emailError.style.display = 'block';
         } else {
-          window.location.href = '/admin_dashboard.html';
+          registerError.textContent = result.error || 'Kayıt başarısız oldu.';
+          registerError.style.display = 'block';
         }
-      } catch (err) {
-        registerError.textContent = 'Bağlantı hatası. Lütfen daha sonra tekrar deneyin.';
-        registerError.style.display = 'block';
+      } else {
+        window.location.href = '/register_success.html';
+      }
+    } catch (err) {
+      registerError.textContent = 'Bağlantı hatası. Lütfen daha sonra tekrar deneyin.';
+      registerError.style.display = 'block';
+    }
+  });
+
+  // Şifre göster/gizle
+  document.querySelectorAll('.togglePassword').forEach(button => {
+    button.addEventListener('click', () => {
+      const input = button.previousElementSibling;
+      if (input.type === "password") {
+        input.type = "text";
+        button.textContent = "Gizle";
+      } else {
+        input.type = "password";
+        button.textContent = "Göster";
       }
     });
-  </script>
+  });
+</script>
 </body>
-</html>

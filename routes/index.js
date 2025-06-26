@@ -33,6 +33,8 @@ router.get('/api/admin/student-list', adminRoutes.getStudentList);
 router.get('/api/admin/teachers', adminRoutes.getAdminTeachers);
 router.delete('/api/admin/teachers/:id', adminRoutes.deleteTeacher);
 router.get('/api/admin/dashboard-stats', adminRoutes.getDashboardStats);
+router.put('/api/admin/students/:studentId', adminRoutes.updateStudent);
+router.put('/api/admin/students/:studentId/change-course', adminRoutes.changeStudentCourse);
 
 // Passive user routes
 router.get('/api/admin/passive-students', adminRoutes.getPassiveStudents);

@@ -4,70 +4,119 @@
   <meta charset="UTF-8" />
   <title>Öğrenci Paneli</title>
   <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
     body {
       font-family: "Poppins", sans-serif;
       background-color: #f0f2f5;
-      padding: 30px;
-      max-width: 800px;
-      margin: auto;
+      display: flex; min-height: 100vh;
     }
-    h1 {
-      color: #d33;
-      margin-bottom: 20px;
-    }
-    .info-box {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-      padding: 25px 30px;
-      margin-bottom: 30px;
-    }
-    .info-box p {
-      font-size: 18px;
-      margin: 8px 0;
+    .sidebar {
+      background-color: #ffe6e6;
       color: #333;
+      width: 280px;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      border-right: 2px solid #f5c6c6;
+    }
+    .sidebar h2 {
+      margin-bottom: 20px;
+      color: #c0392b;
+    }
+    .sidebar p {
+      font-size: 16px;
+      margin-bottom: 10px;
+      word-break: break-word;
+    }
+    button#logoutBtn {
+      margin-top: auto;
+      background-color: #d33;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 100%;
+    }
+    button#logoutBtn:hover {
+      background-color: #a22;
     }
   </style>
 </head>
 <body>
-  <h1>Öğrenci Paneli</h1>
 
-  <div class="info-box" id="studentInfo">
-    <p><strong>İsim:</strong> Yükleniyor...</p>
-    <p><strong>Doğum Tarihi:</strong> Yükleniyor...</p>
-    <p><strong>Kurs:</strong> Yükleniyor...</p>
-    <p><strong>Durum:</strong> Yükleniyor...</p>
+  <div class="sidebar">
+    <h2>Profil Bilgileri</h2>
+    <p><strong>Ad Soyad:</strong> <span id="studentName">Yükleniyor...</span></p>
+    <p><strong>Kurs:</strong> <span id="courseName">Yükleniyor...</span></p>
+    <button id="logoutBtn">Çıkış Yap</button>
   </div>
 
-  <script>
-    async function loadStudentInfo() {
-      const studentId = localStorage.getItem('selectedStudentId');
-      if (!studentId) {
-        alert('Öğrenci seçilmemiş!');
-        window.location.href = '/dashboard.html';
-        return;
-      }
+<script>
+  async function loadStudentInfo() {
+    const selectedStudentId = localStorage.getItem('selectedStudentId');
 
-      try {
-        const res = await fetch(`/api/student/${studentId}`, { credentials: 'include' });
-        if (!res.ok) throw new Error('Öğrenci bilgisi alınamadı.');
-
-        const data = await res.json();
-
-        const infoDiv = document.getElementById('studentInfo');
-        infoDiv.innerHTML = `
-          <p><strong>İsim:</strong> ${data.First_Name} ${data.Last_Name}</p>
-          <p><strong>Doğum Tarihi:</strong> ${new Date(data.Birth_Date).toLocaleDateString('tr-TR')}</p>
-          <p><strong>Kurs:</strong> ${data.Course_Name}</p>
-          <p><strong>Durum:</strong> ${data.Status}</p>
-        `;
-
-      } catch (error) {
-        alert(error.message);
-      }
+    if (!selectedStudentId) {
+      alert('Lütfen önce bir öğrenci seçiniz.');
+      window.location.href = '/'; 
+      return;
     }
 
-    loadStudentInfo();
-  </script>
+    try {
+      const response = await fetch(`/api/student/${selectedStudentId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Öğrenci bilgisi alınamadı');
+      }
+      const student = await response.json();
+
+      document.getElementById('studentName').textContent = `${student.First_Name} ${student.Last_Name}`;
+      document.getElementById('courseName').textContent = student.Course_Name || '-';
+
+    } catch (error) {
+      alert('Öğrenci bilgisi yüklenirken hata oluştu.');
+      console.error(error);
+    }
+  }
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  const rawUser = localStorage.getItem('user');
+
+  if (!rawUser) {
+    alert('Kullanıcı bilgisi bulunamadı. Ana sayfaya yönlendiriliyorsunuz.');
+    localStorage.removeItem('selectedStudentId');
+    window.location.href = '/';
+    return;
+  }
+
+  const userWrapper = JSON.parse(rawUser);
+  const user = userWrapper.user || userWrapper;
+
+  localStorage.removeItem('selectedStudentId');
+
+  switch (user.Role_ID) {
+    case 1:
+      window.location.href = '/admin_dashboard.html';
+      break;
+    case 2:
+      window.location.href = '/teacher_dashboard.html';
+      break;
+    case 3:
+      window.location.href = '/guardian_dashboard.html';
+      break;
+    default:
+      window.location.href = '/';
+  }
+});
+
+  loadStudentInfo();
+</script>
+
 </body>
 </html>

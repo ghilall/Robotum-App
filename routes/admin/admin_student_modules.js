@@ -229,4 +229,64 @@ export const getCategories = async (req, res) => {
     console.error('Category fetch error:', err);
     res.status(500).json({ error: 'Kategori verisi alınamadı' });
   }
+};
+
+// PUT /api/admin/students/:studentId
+export const updateStudent = async (req, res) => {
+  if (!req.session.user || req.session.user.Role_ID !== 1) {
+    return res.status(403).json({ error: 'Yetkisiz erişim' });
+  }
+  const studentId = parseInt(req.params.studentId, 10);
+  const { firstName, lastName, birthDate } = req.body;
+  if (isNaN(studentId)) {
+    return res.status(400).json({ error: 'Geçersiz öğrenci ID' });
+  }
+  try {
+    // Get User_ID for this student
+    const userResult = await pool.query(
+      `SELECT "User_ID" FROM "Students" WHERE "Student_ID" = $1`,
+      [studentId]
+    );
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Öğrenci bulunamadı.' });
+    }
+    const userId = userResult.rows[0].User_ID;
+    // Update Users table
+    await pool.query(
+      `UPDATE "Users" SET "First_Name" = $1, "Last_Name" = $2, "Birth_Date" = $3 WHERE "User_ID" = $4`,
+      [firstName, lastName, birthDate, userId]
+    );
+    res.json({ message: 'Öğrenci bilgileri güncellendi.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Sunucu hatası.' });
+  }
+};
+
+// PUT /api/admin/students/:studentId/change-course
+export const changeStudentCourse = async (req, res) => {
+  if (!req.session.user || req.session.user.Role_ID !== 1) {
+    return res.status(403).json({ error: 'Yetkisiz erişim' });
+  }
+  const studentId = parseInt(req.params.studentId, 10);
+  const { courseId, programId } = req.body;
+  if (isNaN(studentId) || !courseId || !programId) {
+    return res.status(400).json({ error: 'Eksik veya hatalı veri.' });
+  }
+  try {
+    // Remove old program assignments
+    await pool.query(
+      `DELETE FROM "Program_Students" WHERE "Student_ID" = $1`,
+      [studentId]
+    );
+    // Add new program assignment
+    await pool.query(
+      `INSERT INTO "Program_Students" ("Student_ID", "Program_ID") VALUES ($1, $2)`,
+      [studentId, programId]
+    );
+    res.json({ message: 'Kurs ve program güncellendi.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Sunucu hatası.' });
+  }
 }; 

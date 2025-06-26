@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Öğretmen Atamaları</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #f8fafc;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      color: #dc2626;
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #64748b;
+      font-size: 1.1rem;
+    }
+
+    .assignment-form {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .form-title {
+      color: #dc2626;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+
+    .submit-btn {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      color: white;
+      padding: 0.75rem 2rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      margin-top: 1rem;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .submit-btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .assignments-table {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
+
+    .table-header {
+      background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .table-header h2 {
+      color: #dc2626;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .filters {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 150px;
+    }
+
+    .filter-group label {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 0.25rem;
+    }
+
+    .filter-group select,
+    .filter-group input {
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    th {
+      background-color: #f8fafc;
+      font-weight: 600;
+      color: #374151;
+      font-size: 0.875rem;
+    }
+
+    td {
+      color: #1f2937;
+      font-size: 0.875rem;
+    }
+
+    tr:hover {
+      background-color: #f9fafb;
+    }
+
+    .delete-btn {
+      background-color: #ef4444;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .delete-btn:hover {
+      background-color: #dc2626;
+    }
+
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .status-upcoming {
+      background-color: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .status-today {
+      background-color: #fef3c7;
+      color: #d97706;
+    }
+
+    .status-past {
+      background-color: #f3f4f6;
+      color: #6b7280;
+    }
+
+    .error-message {
+      background-color: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .success-message {
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #16a34a;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #6b7280;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .filters {
+        flex-direction: column;
+      }
+
+      .filter-group {
+        min-width: auto;
+      }
+
+      th, td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Öğretmen Atamaları</h1>
+      <p>Öğretmenleri kurslara atayın ve programlarını yönetin</p>
+    </div>
+
+    <!-- Error/Success Messages -->
+    <div id="errorMessage" class="error-message"></div>
+    <div id="successMessage" class="success-message"></div>
+
+    <!-- Assignment Form -->
+    <div class="assignment-form">
+      <h3 class="form-title">Yeni Öğretmen Ataması</h3>
+      <form id="assignmentForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="teacherId">Öğretmen:</label>
+            <select id="teacherId" name="teacherId" required>
+              <option value="">Öğretmen seçiniz</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="courseId">Kurs:</label>
+            <select id="courseId" name="courseId" required>
+              <option value="">Kurs seçiniz</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="assignmentDate">Tarih:</label>
+            <input type="date" id="assignmentDate" name="assignmentDate" required>
+          </div>
+          <div class="form-group">
+            <label for="role">Rol:</label>
+            <select id="role" name="role" required>
+              <option value="">Rol seçiniz</option>
+              <option value="Asıl">Asıl</option>
+              <option value="Yardımcı">Yardımcı</option>
+              <option value="Stajyer">Stajyer</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Atama Oluştur</button>
+      </form>
+    </div>
+
+    <!-- Assignments Table -->
+    <div class="assignments-table">
+      <div class="table-header">
+        <h2>Mevcut Atamalar</h2>
+        <div class="filters">
+          <div class="filter-group">
+            <label for="filterTeacher">Öğretmen:</label>
+            <select id="filterTeacher">
+              <option value="">Tümü</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filterCourse">Kurs:</label>
+            <select id="filterCourse">
+              <option value="">Tümü</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filterRole">Rol:</label>
+            <select id="filterRole">
+              <option value="">Tümü</option>
+              <option value="Asıl">Asıl</option>
+              <option value="Yardımcı">Yardımcı</option>
+              <option value="Stajyer">Stajyer</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filterStartDate">Başlangıç Tarihi:</label>
+            <input type="date" id="filterStartDate">
+          </div>
+          <div class="filter-group">
+            <label for="filterEndDate">Bitiş Tarihi:</label>
+            <input type="date" id="filterEndDate">
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Öğretmen</th>
+              <th>Kurs</th>
+              <th>Tarih</th>
+              <th>Rol</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody id="assignmentsTableBody">
+            <tr>
+              <td colspan="7" class="loading">Yükleniyor...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let teachers = [];
+    let courses = [];
+    let assignments = [];
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+      loadTeachers();
+      loadCourses();
+      loadAssignments();
+      setupEventListeners();
+    });
+
+    // Load teachers for dropdown
+    async function loadTeachers() {
+      try {
+        const response = await fetch('/api/admin/teachers', { credentials: 'include' });
+        if (!response.ok) throw new Error('Öğretmenler alınamadı');
+        
+        const data = await response.json();
+        teachers = data.teachers;
+        
+        const teacherSelect = document.getElementById('teacherId');
+        const filterTeacher = document.getElementById('filterTeacher');
+        
+        teachers.forEach(teacher => {
+          const option = document.createElement('option');
+          option.value = teacher.Teacher_ID;
+          option.textContent = `${teacher.First_Name} ${teacher.Last_Name}`;
+          teacherSelect.appendChild(option.cloneNode(true));
+          filterTeacher.appendChild(option);
+        });
+      } catch (error) {
+        showError('Öğretmenler yüklenirken hata oluştu: ' + error.message);
+      }
+    }
+
+    // Load courses for dropdown
+    async function loadCourses() {
+      try {
+        const response = await fetch('/api/courses', { credentials: 'include' });
+        if (!response.ok) throw new Error('Kurslar alınamadı');
+        
+        const data = await response.json();
+        courses = data.courses;
+        
+        const courseSelect = document.getElementById('courseId');
+        const filterCourse = document.getElementById('filterCourse');
+        
+        courses.forEach(course => {
+          const option = document.createElement('option');
+          option.value = course.Course_ID;
+          option.textContent = course.Course_Name;
+          courseSelect.appendChild(option.cloneNode(true));
+          filterCourse.appendChild(option);
+        });
+      } catch (error) {
+        showError('Kurslar yüklenirken hata oluştu: ' + error.message);
+      }
+    }
+
+    // Load assignments
+    async function loadAssignments() {
+      try {
+        const filters = getFilters();
+        const queryParams = new URLSearchParams(filters).toString();
+        
+        const response = await fetch(`/api/teacher-assignments?${queryParams}`, { 
+          credentials: 'include' 
+        });
+        if (!response.ok) throw new Error('Atamalar alınamadı');
+        
+        const data = await response.json();
+        assignments = data.assignments;
+        renderAssignmentsTable();
+      } catch (error) {
+        showError('Atamalar yüklenirken hata oluştu: ' + error.message);
+      }
+    }
+
+    // Get current filters
+    function getFilters() {
+      const filters = {};
+      const filterTeacher = document.getElementById('filterTeacher').value;
+      const filterCourse = document.getElementById('filterCourse').value;
+      const filterRole = document.getElementById('filterRole').value;
+      const filterStartDate = document.getElementById('filterStartDate').value;
+      const filterEndDate = document.getElementById('filterEndDate').value;
+
+      if (filterTeacher) filters.teacherId = filterTeacher;
+      if (filterCourse) filters.courseId = filterCourse;
+      if (filterRole) filters.role = filterRole;
+      if (filterStartDate) filters.startDate = filterStartDate;
+      if (filterEndDate) filters.endDate = filterEndDate;
+
+      return filters;
+    }
+
+    // Render assignments table
+    function renderAssignmentsTable() {
+      const tbody = document.getElementById('assignmentsTableBody');
+      tbody.innerHTML = '';
+
+      if (assignments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6b7280;">Atama bulunamadı</td></tr>';
+        return;
+      }
+
+      assignments.forEach(assignment => {
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+          <td>${assignment.Teacher_First_Name} ${assignment.Teacher_Last_Name}</td>
+          <td>${assignment.Course_Name} (${assignment.Level})</td>
+          <td>${new Date(assignment.Date).toLocaleDateString('tr-TR')}</td>
+          <td>${assignment.Role || 'Belirtilmemiş'}</td>
+          <td>
+            <button class="delete-btn" onclick="deleteAssignment(${assignment.Program_Teacher_ID})">Sil</button>
+          </td>
+        `;
+        
+        tbody.appendChild(row);
+      });
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // Form submission
+      document.getElementById('assignmentForm').addEventListener('submit', handleFormSubmit);
+      
+      // Filter changes
+      document.getElementById('filterTeacher').addEventListener('change', loadAssignments);
+      document.getElementById('filterCourse').addEventListener('change', loadAssignments);
+      document.getElementById('filterRole').addEventListener('change', loadAssignments);
+      document.getElementById('filterStartDate').addEventListener('change', loadAssignments);
+      document.getElementById('filterEndDate').addEventListener('change', loadAssignments);
+    }
+
+    // Handle form submission
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+      
+      const formData = new FormData(event.target);
+      const data = {
+        teacherId: parseInt(formData.get('teacherId')),
+        courseId: parseInt(formData.get('courseId')),
+        assignmentDate: formData.get('assignmentDate'),
+        role: formData.get('role')
+      };
+
+      // Validate assignment date
+      if (!data.assignmentDate) {
+        showError('Tarih seçimi zorunludur.');
+        return;
+      }
+
+      // Validate role
+      if (!data.role) {
+        showError('Rol seçimi zorunludur.');
+        return;
+      }
+
+      // Validate that date is not in the past
+      if (data.assignmentDate < new Date().toISOString().split('T')[0]) {
+        showError('Geçmiş bir tarih seçemezsiniz.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Oluşturuluyor...';
+
+      try {
+        const response = await fetch('/api/teacher-assignments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Atama oluşturulamadı');
+        }
+
+        showSuccess(result.message);
+        event.target.reset();
+        loadAssignments();
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Atama Oluştur';
+      }
+    }
+
+    // Delete assignment
+    async function deleteAssignment(assignmentId) {
+      if (!confirm('Bu atamayı silmek istediğinizden emin misiniz?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/teacher-assignments/${assignmentId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Atama silinemedi');
+        }
+
+        showSuccess('Atama başarıyla silindi.');
+        loadAssignments();
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    // Show error message
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    // Show success message
+    function showSuccess(message) {
+      const successDiv = document.getElementById('successMessage');
+      successDiv.textContent = message;
+      successDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        successDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    // Set minimum date to today
+    document.getElementById('assignmentDate').min = new Date().toISOString().split('T')[0];
+  </script>
+</body>
+</html> 

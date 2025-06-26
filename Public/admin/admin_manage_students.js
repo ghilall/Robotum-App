@@ -389,6 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const levelFilter = document.getElementById('levelFilter');
   const courseSelect = document.getElementById('courseId');
   const programSelect = document.getElementById('programId');
+  const programDaySelect = document.getElementById('programDay');
   const guardianSearch = document.getElementById('guardianSearch');
   const guardianResults = document.getElementById('guardianResults');
   const guardianIdInput = document.getElementById('guardianId');
@@ -403,6 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
       studentModal.style.display = 'flex';
       loadCategoriesAndLevels();
       programSelect.innerHTML = '<option value="">Saat seçiniz</option>';
+      if (programDaySelect) programDaySelect.value = '';
     });
     closeStudentModalBtn.addEventListener('click', () => {
       studentModal.style.display = 'none';
@@ -509,9 +511,13 @@ document.addEventListener('DOMContentLoaded', function() {
   categoryFilter.addEventListener('change', updateCourseOptions);
   levelFilter.addEventListener('change', updateCourseOptions);
 
-  // Load program hours when a course is selected
-  courseSelect.addEventListener('change', async function () {
-    const courseId = this.value;
+  // Listen for changes on both course and day selects
+  courseSelect.addEventListener('change', loadAndFilterPrograms);
+  programDaySelect.addEventListener('change', loadAndFilterPrograms);
+
+  async function loadAndFilterPrograms() {
+    const courseId = courseSelect.value;
+    const selectedDay = programDaySelect.value;
     programSelect.innerHTML = '';
     if (!courseId) {
       programSelect.innerHTML = '<option value="">Saat seçiniz</option>';
@@ -520,7 +526,11 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const res = await fetch(`/api/programs/by-course/${courseId}`, { credentials: 'include' });
       const data = await res.json();
-      if (!data.programs || data.programs.length === 0) {
+      let programs = data.programs || [];
+      if (selectedDay) {
+        programs = programs.filter(p => p.Day === selectedDay);
+      }
+      if (programs.length === 0) {
         const option = document.createElement('option');
         option.textContent = 'Saat bulunamadı';
         option.disabled = true;
@@ -533,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
       defaultOption.disabled = true;
       defaultOption.selected = true;
       programSelect.appendChild(defaultOption);
-      data.programs.forEach(p => {
+      programs.forEach(p => {
         const current = parseInt(p.Current_Count);
         const capacity = parseInt(p.Capacity);
         const isFull = current >= capacity;
@@ -551,7 +561,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error('Saatler alınamadı:', err);
       programSelect.innerHTML = '<option value="">Saatler alınamadı</option>';
     }
-  });
+  }
 
   // Guardian live search
   guardianSearch.addEventListener('input', async () => {
@@ -649,69 +659,96 @@ window.displayStudentList = function displayStudentList(groupedStudents) {
     'Pazar': 7
   };
 
-  let html = '';
+  // Collect all students into a flat array with their course and earliest program day
+  let allStudents = [];
   for (const courseName in groupedStudents) {
     const students = groupedStudents[courseName];
-    const studentsArr = Object.values(students);
-
-    // Sort by earliest (day, start time)
-    studentsArr.sort((a, b) => {
-      function getEarliestProgram(student) {
-        if (!student.program || student.program.length === 0) return null;
-        return student.program
-          .map(p => ({
-            day: dayOrder[p.day] || 99,
-            start: p.start
-          }))
-          .sort((p1, p2) => {
-            if (p1.day !== p2.day) return p1.day - p2.day;
-            return p1.start.localeCompare(p2.start);
-          })[0];
-      }
-      const aEarliest = getEarliestProgram(a);
-      const bEarliest = getEarliestProgram(b);
-      if (aEarliest && bEarliest) {
-        if (aEarliest.day !== bEarliest.day) return aEarliest.day - bEarliest.day;
-        return aEarliest.start.localeCompare(bEarliest.start);
-      } else if (aEarliest) {
-        return -1;
-      } else if (bEarliest) {
-        return 1;
-      } else {
-        return 0;
-      }
-    });
-
-    html += `
-      <div class="course-group">
-        <div class="course-title">${courseName}</div>
-    `;
-    for (const student of studentsArr) {
-      let programText = '';
+    for (const studentId in students) {
+      const student = students[studentId];
+      let earliestDay = null;
+      let earliestStart = null;
       if (student.program && student.program.length > 0) {
-        programText = student.program
-          .map(p => `${p.day}: ${p.start} - ${p.end} (${p.room})`)
-          .join(', ');
+        // Find the earliest program (by day, then by start time)
+        const sortedPrograms = student.program.slice().sort((a, b) => {
+          const dayA = dayOrder[a.day] || 99;
+          const dayB = dayOrder[b.day] || 99;
+          if (dayA !== dayB) return dayA - dayB;
+          return a.start.localeCompare(b.start);
+        });
+        earliestDay = sortedPrograms[0].day;
+        earliestStart = sortedPrograms[0].start;
       }
-      html += `
-        <div class="student-item">
-          <div class="student-info">
-            <div class="student-name">${student.firstName} ${student.lastName}</div>
-            <div class="student-details">
-              Öğrenci ID: ${student.studentId}
+      allStudents.push({
+        ...student,
+        courseName,
+        earliestDay,
+        earliestStart
+      });
+    }
+  }
+
+  // Group students by day, then by course
+  const studentsByDayCourse = {};
+  allStudents.forEach(student => {
+    const day = student.earliestDay || 'Diğer';
+    if (!studentsByDayCourse[day]) studentsByDayCourse[day] = {};
+    if (!studentsByDayCourse[day][student.courseName]) studentsByDayCourse[day][student.courseName] = [];
+    studentsByDayCourse[day][student.courseName].push(student);
+  });
+
+  // Sort days by dayOrder
+  const sortedDays = Object.keys(studentsByDayCourse).sort((a, b) => {
+    return (dayOrder[a] || 99) - (dayOrder[b] || 99);
+  });
+
+  let html = '';
+  for (const day of sortedDays) {
+    html += `<div class="day-group"><div class="day-title">${day}</div>`;
+    const courses = studentsByDayCourse[day];
+    // Sort courses alphabetically
+    const sortedCourses = Object.keys(courses).sort();
+    for (const courseName of sortedCourses) {
+      html += `<div class="course-group"><div class="course-title">${courseName}</div>`;
+      // Sort students by earliest start time within the day
+      const studentsArr = courses[courseName].slice().sort((a, b) => {
+        if (a.earliestStart && b.earliestStart) {
+          return a.earliestStart.localeCompare(b.earliestStart);
+        } else if (a.earliestStart) {
+          return -1;
+        } else if (b.earliestStart) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+      for (const student of studentsArr) {
+        let programText = '';
+        if (student.program && student.program.length > 0) {
+          programText = student.program
+            .map(p => `${p.day}: ${p.start} - ${p.end} (${p.room})`)
+            .join(', ');
+        }
+        html += `
+          <div class="student-item">
+            <div class="student-info">
+              <div class="student-name">${student.firstName} ${student.lastName}</div>
+              <div class="student-details">
+                Öğrenci ID: ${student.studentId}
+              </div>
+              ${programText ? `<div class="program-info">📅 ${programText}</div>` : ''}
             </div>
-            ${programText ? `<div class="program-info">📅 ${programText}</div>` : ''}
+            <div class="student-actions">
+              <button class="edit-btn" onclick="editStudent(${student.studentId})">
+                ✏️ Düzenle
+              </button>
+              <button class="delete-btn" onclick="deleteStudent(${student.studentId}, '${student.firstName} ${student.lastName}')">
+                ⏸️ Pasife Al
+              </button>
+            </div>
           </div>
-          <div class="student-actions">
-            <button class="edit-btn" onclick="editStudent(${student.studentId})">
-              ✏️ Düzenle
-            </button>
-            <button class="delete-btn" onclick="deleteStudent(${student.studentId}, '${student.firstName} ${student.lastName}')">
-              ⏸️ Pasife Al
-            </button>
-          </div>
-        </div>
-      `;
+        `;
+      }
+      html += '</div>';
     }
     html += '</div>';
   }
@@ -825,4 +862,397 @@ window.permanentlyDeleteStudent = async function permanentlyDeleteStudent(studen
       alert('Öğrenci kalıcı olarak silinirken hata oluştu: ' + error.message);
     }
   }
+};
+
+window.editStudent = function editStudent(studentId) {
+  // Find student data from the currently loaded list
+  let student = null;
+  if (window.allStudentsData) {
+    for (const courseName in window.allStudentsData) {
+      const students = window.allStudentsData[courseName];
+      if (students[studentId]) {
+        student = students[studentId];
+        break;
+      }
+    }
+  }
+  if (!student) {
+    alert('Öğrenci verisi bulunamadı.');
+    return;
+  }
+  // Populate modal fields
+  document.getElementById('editFirstName').value = student.firstName || '';
+  document.getElementById('editLastName').value = student.lastName || '';
+  document.getElementById('editBirthDate').value = student.birthDate ? student.birthDate.split('T')[0] : '';
+  // Store editing student id
+  window.editingStudentId = studentId;
+  document.getElementById('editStudentModal').style.display = 'flex';
+};
+
+// Modal open/close logic for edit student
+const editStudentModal = document.getElementById('editStudentModal');
+const closeEditStudentModalBtn = document.getElementById('closeEditStudentModalBtn');
+if (editStudentModal && closeEditStudentModalBtn) {
+  closeEditStudentModalBtn.addEventListener('click', () => {
+    editStudentModal.style.display = 'none';
+  });
+  window.addEventListener('click', (e) => {
+    if (e.target === editStudentModal) editStudentModal.style.display = 'none';
+  });
+}
+
+// Submit edit student form
+const editStudentForm = document.getElementById('editStudentForm');
+if (editStudentForm) {
+  editStudentForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const studentId = window.editingStudentId;
+    const data = {
+      firstName: editStudentForm.editFirstName.value.trim(),
+      lastName: editStudentForm.editLastName.value.trim(),
+      birthDate: editStudentForm.editBirthDate.value
+      // Add other fields if needed
+    };
+    try {
+      const response = await fetch(`/api/admin/students/${studentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (response.ok) {
+        alert('Öğrenci bilgileri güncellendi.');
+        editStudentModal.style.display = 'none';
+        if (typeof window.loadStudentList === 'function') window.loadStudentList();
+      } else {
+        alert(result.error || 'Güncelleme başarısız.');
+      }
+    } catch (err) {
+      alert('Sunucu hatası: ' + err.message);
+    }
+  });
+}
+
+// Change Course logic
+window.changeStudentCourse = function changeStudentCourse(studentId) {
+  // Store editing student id
+  window.changingCourseStudentId = studentId;
+  document.getElementById('changeCourseModal').style.display = 'flex';
+  // Optionally, pre-select current course/program if needed
+};
+
+// Modal open/close logic for change course
+const changeCourseModal = document.getElementById('changeCourseModal');
+const closeChangeCourseModalBtn = document.getElementById('closeChangeCourseModalBtn');
+if (changeCourseModal && closeChangeCourseModalBtn) {
+  closeChangeCourseModalBtn.addEventListener('click', () => {
+    changeCourseModal.style.display = 'none';
+  });
+  window.addEventListener('click', (e) => {
+    if (e.target === changeCourseModal) changeCourseModal.style.display = 'none';
+  });
+}
+
+// Change course form logic (same as registration logic, but for editing)
+const changeCategoryFilter = document.getElementById('changeCategoryFilter');
+const changeLevelFilter = document.getElementById('changeLevelFilter');
+const changeCourseSelect = document.getElementById('changeCourseId');
+const changeProgramDaySelect = document.getElementById('changeProgramDay');
+const changeProgramSelect = document.getElementById('changeProgramId');
+
+async function loadChangeModalCategoriesAndLevels() {
+  changeCategoryFilter.innerHTML = '<option value="">Tümü</option>';
+  try {
+    const [catRes, levelRes] = await Promise.all([
+      fetch('/api/categories', { credentials: 'include' }),
+      fetch('/api/course-levels', { credentials: 'include' })
+    ]);
+    const cats = await catRes.json();
+    const levels = await levelRes.json();
+    if (cats.categories && cats.categories.length > 0) {
+      cats.categories.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.Category_ID;
+        opt.textContent = c.Category_Name;
+        changeCategoryFilter.appendChild(opt);
+      });
+    }
+    changeLevelFilter.innerHTML = '<option value="">Tümü</option>';
+    levels.levels.forEach(lvl => {
+      const opt = document.createElement('option');
+      opt.value = lvl;
+      opt.textContent = lvl;
+      changeLevelFilter.appendChild(opt);
+    });
+    await loadAllChangeCourses();
+  } catch (err) {
+    changeCategoryFilter.innerHTML = '<option value="">Kategoriler yüklenemedi</option>';
+    console.error('Kategoriler yüklenemedi:', err);
+  }
+}
+
+async function loadAllChangeCourses() {
+  changeCourseSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+  try {
+    const response = await fetch('/api/courses', { credentials: 'include' });
+    const data = await response.json();
+    changeCourseSelect.innerHTML = '';
+    if (!data.courses || data.courses.length === 0) {
+      changeCourseSelect.innerHTML = '<option value="">Kurs bulunamadı</option>';
+    } else {
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = 'Kurs seçiniz';
+      changeCourseSelect.appendChild(defaultOption);
+      data.courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.Course_ID;
+        option.textContent = course.Course_Name;
+        changeCourseSelect.appendChild(option);
+      });
+    }
+  } catch (err) {
+    console.error('Kurslar yüklenemedi:', err);
+    changeCourseSelect.innerHTML = '<option value="">Kurslar alınamadı</option>';
+  }
+  changeProgramSelect.innerHTML = '<option value="">Saat seçiniz</option>';
+}
+
+async function updateChangeCourseOptions() {
+  const categoryId = changeCategoryFilter.value;
+  const level = changeLevelFilter.value;
+  changeCourseSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+  try {
+    const params = new URLSearchParams();
+    if (categoryId) params.append('categoryId', categoryId);
+    if (level) params.append('level', level);
+    const response = await fetch(`/api/courses?${params.toString()}`, { credentials: 'include' });
+    const data = await response.json();
+    changeCourseSelect.innerHTML = '';
+    if (!data.courses || data.courses.length === 0) {
+      changeCourseSelect.innerHTML = '<option value="">Uygun kurs bulunamadı</option>';
+    } else {
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = 'Kurs seçiniz';
+      changeCourseSelect.appendChild(defaultOption);
+      data.courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.Course_ID;
+        option.textContent = course.Course_Name;
+        changeCourseSelect.appendChild(option);
+      });
+    }
+  } catch (err) {
+    console.error('Kurslar yüklenemedi:', err);
+    changeCourseSelect.innerHTML = '<option value="">Kurslar alınamadı</option>';
+  }
+  changeProgramSelect.innerHTML = '<option value="">Saat seçiniz</option>';
+}
+
+changeCategoryFilter.addEventListener('change', updateChangeCourseOptions);
+changeLevelFilter.addEventListener('change', updateChangeCourseOptions);
+
+changeCourseSelect.addEventListener('change', loadAndFilterChangePrograms);
+changeProgramDaySelect.addEventListener('change', loadAndFilterChangePrograms);
+
+async function loadAndFilterChangePrograms() {
+  const courseId = changeCourseSelect.value;
+  const selectedDay = changeProgramDaySelect.value;
+  changeProgramSelect.innerHTML = '';
+  if (!courseId) {
+    changeProgramSelect.innerHTML = '<option value="">Saat seçiniz</option>';
+    return;
+  }
+  try {
+    const res = await fetch(`/api/programs/by-course/${courseId}`, { credentials: 'include' });
+    const data = await res.json();
+    let programs = data.programs || [];
+    if (selectedDay) {
+      programs = programs.filter(p => p.Day === selectedDay);
+    }
+    if (programs.length === 0) {
+      const option = document.createElement('option');
+      option.textContent = 'Saat bulunamadı';
+      option.disabled = true;
+      changeProgramSelect.appendChild(option);
+      return;
+    }
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Program saati seçiniz';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    changeProgramSelect.appendChild(defaultOption);
+    programs.forEach(p => {
+      const current = parseInt(p.Current_Count);
+      const capacity = parseInt(p.Capacity);
+      const isFull = current >= capacity;
+      const option = document.createElement('option');
+      option.value = p.Program_ID;
+      option.textContent = `${p.Day} - ${p.Start_Time.slice(0, 5)}-${p.End_Time.slice(0, 5)} (${current}/${capacity})`;
+      if (isFull) {
+        option.disabled = true;
+        option.style.color = 'red';
+        option.textContent += ' (DOLU)';
+      }
+      changeProgramSelect.appendChild(option);
+    });
+  } catch (err) {
+    console.error('Saatler alınamadı:', err);
+    changeProgramSelect.innerHTML = '<option value="">Saatler alınamadı</option>';
+  }
+}
+
+// When change course modal opens, reset selects
+const openChangeCourseModal = () => {
+  if (changeCategoryFilter) changeCategoryFilter.value = '';
+  if (changeLevelFilter) changeLevelFilter.value = '';
+  if (changeCourseSelect) changeCourseSelect.innerHTML = '<option value="">Saat seçiniz</option>';
+  if (changeProgramDaySelect) changeProgramDaySelect.value = '';
+  if (changeProgramSelect) changeProgramSelect.innerHTML = '<option value="">Saat seçiniz</option>';
+  loadChangeModalCategoriesAndLevels();
+};
+if (changeCourseModal) {
+  changeCourseModal.addEventListener('show', openChangeCourseModal);
+}
+
+// Submit change course form
+const changeCourseForm = document.getElementById('changeCourseForm');
+if (changeCourseForm) {
+  changeCourseForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const studentId = window.changingCourseStudentId;
+    const data = {
+      courseId: changeCourseForm.changeCourseId.value,
+      programId: changeCourseForm.changeProgramId.value
+    };
+    try {
+      const response = await fetch(`/api/admin/students/${studentId}/change-course`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (response.ok) {
+        alert('Kurs ve program güncellendi.');
+        changeCourseModal.style.display = 'none';
+        if (typeof window.loadStudentList === 'function') window.loadStudentList();
+      } else {
+        alert(result.error || 'Kurs değiştirilemedi.');
+      }
+    } catch (err) {
+      alert('Sunucu hatası: ' + err.message);
+    }
+  });
+}
+
+// Add 'Kurs Değiştir' button to student actions in displayStudentList
+const originalDisplayStudentList = window.displayStudentList;
+window.displayStudentList = function displayStudentListWithEdit(groupedStudents) {
+  // Use the same logic as before, but add the new button
+  const container = document.getElementById('studentListContainer');
+  if (!groupedStudents || Object.keys(groupedStudents).length === 0) {
+    container.innerHTML = '<div class="no-students">Henüz öğrenci bulunmuyor.</div>';
+    return;
+  }
+  const dayOrder = {
+    'Pazartesi': 1,
+    'Salı': 2,
+    'Çarşamba': 3,
+    'Perşembe': 4,
+    'Cuma': 5,
+    'Cumartesi': 6,
+    'Pazar': 7
+  };
+  let allStudents = [];
+  for (const courseName in groupedStudents) {
+    const students = groupedStudents[courseName];
+    for (const studentId in students) {
+      const student = students[studentId];
+      let earliestDay = null;
+      let earliestStart = null;
+      if (student.program && student.program.length > 0) {
+        const sortedPrograms = student.program.slice().sort((a, b) => {
+          const dayA = dayOrder[a.day] || 99;
+          const dayB = dayOrder[b.day] || 99;
+          if (dayA !== dayB) return dayA - dayB;
+          return a.start.localeCompare(b.start);
+        });
+        earliestDay = sortedPrograms[0].day;
+        earliestStart = sortedPrograms[0].start;
+      }
+      allStudents.push({
+        ...student,
+        courseName,
+        earliestDay,
+        earliestStart
+      });
+    }
+  }
+  const studentsByDayCourse = {};
+  allStudents.forEach(student => {
+    const day = student.earliestDay || 'Diğer';
+    if (!studentsByDayCourse[day]) studentsByDayCourse[day] = {};
+    if (!studentsByDayCourse[day][student.courseName]) studentsByDayCourse[day][student.courseName] = [];
+    studentsByDayCourse[day][student.courseName].push(student);
+  });
+  const sortedDays = Object.keys(studentsByDayCourse).sort((a, b) => {
+    return (dayOrder[a] || 99) - (dayOrder[b] || 99);
+  });
+  let html = '';
+  for (const day of sortedDays) {
+    html += `<div class="day-group"><div class="day-title">${day}</div>`;
+    const courses = studentsByDayCourse[day];
+    const sortedCourses = Object.keys(courses).sort();
+    for (const courseName of sortedCourses) {
+      html += `<div class="course-group"><div class="course-title">${courseName}</div>`;
+      const studentsArr = courses[courseName].slice().sort((a, b) => {
+        if (a.earliestStart && b.earliestStart) {
+          return a.earliestStart.localeCompare(b.earliestStart);
+        } else if (a.earliestStart) {
+          return -1;
+        } else if (b.earliestStart) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+      for (const student of studentsArr) {
+        let programText = '';
+        if (student.program && student.program.length > 0) {
+          programText = student.program
+            .map(p => `${p.day}: ${p.start} - ${p.end} (${p.room})`)
+            .join(', ');
+        }
+        html += `
+          <div class="student-item">
+            <div class="student-info">
+              <div class="student-name">${student.firstName} ${student.lastName}</div>
+              <div class="student-details">
+                Öğrenci ID: ${student.studentId}
+              </div>
+              ${programText ? `<div class="program-info">📅 ${programText}</div>` : ''}
+            </div>
+            <div class="student-actions">
+              <button class="edit-btn" onclick="editStudent(${student.studentId})">
+                ✏️ Düzenle
+              </button>
+              <button class="delete-btn" onclick="deleteStudent(${student.studentId}, '${student.firstName} ${student.lastName}')">
+                ⏸️ Pasife Al
+              </button>
+              <button class="change-course-btn" onclick="changeStudentCourse(${student.studentId})">
+                🔄 Kurs Değiştir
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
 };
