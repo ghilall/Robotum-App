@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Öğrenci Kayıt Formu</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Poppins", sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .registration-container {
+      background: white;
+      padding: 40px 50px;
+      border-radius: 10px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+      width: 400px;
+      position: relative;
+    }
+    h1 {
+      margin-bottom: 30px;
+      color: #c0392b;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 15px;
+      transition: border-color 0.3s ease;
+    }
+    input:focus, select:focus {
+      border-color: #e74c3c;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: #e74c3c;
+      border: none;
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #c0392b;
+    }
+    #guardianResults {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 10;
+      display: none;
+    }
+    #guardianResults div {
+      padding: 10px;
+      cursor: pointer;
+    }
+    #guardianResults div:hover {
+      background-color: #f8d7da;
+    }
+  </style>
+</head>
+<body>
+  <div class="registration-container">
+    <h1>Öğrenci Kayıt Formu</h1>
+    <form id="studentRegistrationForm">
+      <label for="firstName">Ad</label>
+      <input type="text" id="firstName" name="firstName" required />
+
+      <label for="lastName">Soyad</label>
+      <input type="text" id="lastName" name="lastName" required />
+
+      <label for="birthDate">Doğum Tarihi</label>
+      <input type="date" id="birthDate" name="birthDate" required />
+
+      <label for="courseId">Kurs</label>
+      <select id="courseId" name="courseId" required>
+        <option value="">Seçiniz</option>
+        <option value="1">Robotik-1 Okul Öncesi</option>
+        <option value="2">Robotik-1 We-Do</option>
+        <option value="3">Robotik-2 Essential</option>
+        <option value="4">Robotik-2 İleri İlkokul Kodlama</option>
+      </select>
+
+      <label for="guardianSearch">Veli Ara</label>
+      <input type="text" id="guardianSearch" placeholder="İsimle ara..." autocomplete="off" />
+      <div id="guardianResults"></div>
+      <input type="hidden" id="guardianId" name="guardianId" required />
+
+      <button type="submit">Kaydı Tamamla</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('birthDate').max = new Date().toISOString().split('T')[0];
+
+    const form = document.getElementById('studentRegistrationForm');
+    const guardianSearch = document.getElementById('guardianSearch');
+    const guardianResults = document.getElementById('guardianResults');
+    const guardianIdInput = document.getElementById('guardianId');
+
+    // Guardian live search
+    guardianSearch.addEventListener('input', async () => {
+      const query = guardianSearch.value.trim();
+      guardianResults.innerHTML = '';
+      guardianResults.style.display = 'none';
+
+      if (query.length < 2) return;
+
+      try {
+        const response = await fetch(`/api/guardians/search?query=${encodeURIComponent(query)}`, {
+          credentials: 'include',
+        });
+        const results = await response.json();
+
+        if (results.length === 0) {
+          guardianResults.innerHTML = '<div>Veli bulunamadı</div>';
+        } else {
+          results.forEach(guardian => {
+            const div = document.createElement('div');
+            div.textContent = `${guardian.First_Name} ${guardian.Last_Name} (${guardian.Email})`;
+            div.dataset.id = guardian.Guardian_ID;
+            div.addEventListener('click', () => {
+              guardianSearch.value = `${guardian.First_Name} ${guardian.Last_Name}`;
+              guardianIdInput.value = guardian.Guardian_ID;
+              guardianResults.style.display = 'none';
+            });
+            guardianResults.appendChild(div);
+          });
+        }
+        guardianResults.style.display = 'block';
+      } catch (err) {
+        console.error('Veli arama hatası:', err);
+      }
+    });
+
+    // Hide results when clicking outside
+    document.addEventListener('click', e => {
+      if (!guardianSearch.contains(e.target) && !guardianResults.contains(e.target)) {
+        guardianResults.style.display = 'none';
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const firstName = form.firstName.value.trim();
+      const lastName = form.lastName.value.trim();
+      const birthDate = form.birthDate.value;
+      const courseId = form.courseId.value;
+      const guardianId = form.guardianId.value;
+      console.log('Selected guardianId:', guardianId);
+
+      if (!guardianId) {
+        alert('Lütfen bir veli seçiniz.');
+        return;
+      }
+
+      const data = { firstName, lastName, birthDate, courseId, guardianId };
+
+      fetch('/student_register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      })
+        .then(response => response.json())
+        .then(result => {
+          if (result.message) {
+            alert(result.message);
+            window.location.href = '/admin_dashboard.html';
+          } else if (result.error) {
+            alert(result.error);
+          }
+        })
+        .catch(error => {
+          console.error('Request error:', error);
+          alert('Sunucuya bağlanılamadı.');
+        });
+    });
+  </script>
+</body>
+</html>

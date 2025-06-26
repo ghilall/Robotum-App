@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kullanıcı Paneli</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar - User Info */
+    .sidebar {
+      background-color: #ffe6e6;
+      color: #333;
+      width: 280px;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      border-right: 2px solid #f5c6c6;
+    }
+
+    .sidebar h2 {
+      margin-bottom: 20px;
+      color: #c0392b;
+    }
+
+    .sidebar p {
+      font-size: 16px;
+      margin-bottom: 10px;
+      word-break: break-word;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 40px;
+      overflow-y: auto;
+    }
+
+    .dashboard-box {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .dashboard-box h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .dashboard-box p {
+      font-size: 16px;
+      color: #555;
+      margin: 5px 0 20px 0;
+    }
+
+    /* Öğrenci Kayıt Normalde Burada Olmayacak --*/ 
+    .dashboard-box button {
+      margin-top: 22px;
+      background-color: #d33;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .dashboard-box button:hover {
+      background-color: #a22;
+    }
+
+    button {
+      background-color: #e74c3c;
+      border: none;
+      color: white;
+      padding: 12px 25px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #e74c3c;
+    }
+
+    #logoutBtn {
+  margin-top: auto;
+}
+
+    /* Student Grid */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .student-card {
+      background-color: #e74c3c;
+      color: white;
+      padding: 25px;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 1.1em;
+      font-weight: bold;
+      transition: transform 0.2s, background-color 0.3s;
+    }
+
+    .student-card:hover {
+      background-color: #c0392b;
+      transform: scale(1.05);
+    }
+
+    .message {
+      text-align: center;
+      color: #666;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar with user info -->
+  <div class="sidebar">
+    <h2>Profil Bilgileri</h2>
+    <p><strong>Ad Soyad:</strong> <span id="userName">Yükleniyor...</span></p>
+    <p><strong>Email:</strong> <span id="userEmail">Yükleniyor...</span></p>
+    <p><strong>Telefon:</strong> <span id="userPhone">Yükleniyor...</span></p>
+    <button id="logoutBtn">Çıkış Yap</button>
+  </div>
+
+  <!-- Main content area -->
+  <div class="main-content">
+    <div class="dashboard-box">
+      <h1>Hoşgeldiniz!</h1>
+      <p>Buradan öğrenci seçerek öğrencinizin derslerini, ilerlemesini ve daha fazlasını görebilirsiniz.</p>
+      
+    </div>
+
+    <!-- Student Selection Grid -->
+    <h2 style="text-align:center; margin-bottom: 20px;">Öğrencileriniz</h2>
+    <div class="grid-container" id="studentsContainer"></div>
+    <div class="message" id="message"></div>
+  </div>
+  <script>
+
+    // Load user info and fill sidebar
+    async function loadUser() {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        alert('Lütfen giriş yapınız.');
+        window.location.href = '/';
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const email = encodeURIComponent(user.email);
+
+      try {
+        const response = await fetch(`/api/user?email=${email}`);
+        if (!response.ok) {
+          throw new Error('Kullanıcı bilgisi alınamadı');
+        }
+        const data = await response.json();
+
+        document.getElementById('userName').textContent = data.name;
+        document.getElementById('userEmail').textContent = data.email;
+        document.getElementById('userPhone').textContent = data.phone;
+
+      } catch (error) {
+        alert('Kullanıcı bilgisi yüklenirken hata oluştu.');
+        console.error(error);
+      }
+    }
+
+    // Logout handler
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    });
+
+    // Load students and display cards
+    async function loadStudents() {
+      try {
+        const res = await fetch('/api/guardian/students', {
+          credentials: 'include'
+        });
+        const result = await res.json();
+
+        const container = document.getElementById('studentsContainer');
+        const message = document.getElementById('message');
+
+        if (res.ok && result.students?.length) {
+          result.students.forEach(student => {
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            card.textContent = `${student.First_Name} ${student.Last_Name}`;
+            card.dataset.id = student.Student_ID;
+
+            card.addEventListener('click', () => {
+              localStorage.setItem('selectedStudentId', student.Student_ID);
+              window.location.href = '/student_dashboard.html';
+            });
+
+            container.appendChild(card);
+          });
+        } else {
+          message.textContent = 'Öğrenci bulunamadı.';
+        }
+      } catch (error) {
+        console.error('Öğrenci bulunamadı.', error);
+        document.getElementById('message').textContent = 'Öğrenci bulunamadı.';
+      }
+    }
+
+    loadUser();
+    loadStudents();
+  </script>
+</body>
+</html>

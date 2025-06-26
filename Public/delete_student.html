@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Öğrenci Sil</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .dashboard-box {
+      max-width: 700px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+
+    .student-card {
+      background-color: #fafafa;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .student-card .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+
+    .student-card .guardian {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 8px;
+    }
+
+    .student-card button {
+      align-self: flex-end;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+
+    .student-card button:hover {
+      background-color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard-box">
+  <h2>Öğrenci Sil</h2>
+  <div id="studentsContainer" style="margin-top: 20px;">
+    <!-- Öğrenci kartları burada listelenecek -->
+  </div>
+</div>
+
+<script>
+function createStudentCard(student) {
+  const div = document.createElement('div');
+  div.classList.add('student-card');
+
+  const header = document.createElement('div');
+  header.classList.add('header');
+  header.textContent = `${student.First_Name} ${student.Last_Name}`;
+
+  const guardian = document.createElement('div');
+  guardian.classList.add('guardian');
+  if (student.Guardian_First_Name && student.Guardian_Last_Name && student.Guardian_Phone) {
+    guardian.innerHTML = `Veli: ${student.Guardian_First_Name} ${student.Guardian_Last_Name} <br> Telefon Numarası: ${student.Guardian_Phone}`;
+  } else {
+    guardian.textContent = 'Veli bilgisi yok';
+  }
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = 'Sil';
+
+  deleteBtn.addEventListener('click', async () => {
+    if (!confirm(`"${student.First_Name} ${student.Last_Name}" isimli öğrenciyi silmek istediğinize emin misiniz?`)) return;
+
+    console.log('Deleting student with ID:', student.Student_ID);
+    try {
+      const response = await fetch(`/api/students/${student.Student_ID}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert('Silme işlemi başarısız: ' + (errorData.error || 'Bilinmeyen hata'));
+        return;
+      }
+
+      alert('Öğrenci başarıyla silindi.');
+      div.remove(); // DOM'dan kartı kaldır
+    } catch (err) {
+      console.error(err);
+      alert('Sunucu hatası, lütfen tekrar deneyiniz.');
+    }
+  });
+
+  div.appendChild(header);
+  div.appendChild(guardian);
+  div.appendChild(deleteBtn);
+
+  return div;
+}
+
+async function loadStudents() {
+  try {
+    const response = await fetch('/api/admin/students', { credentials: 'include' });
+    if (!response.ok) throw new Error('Öğrenciler alınamadı');
+
+    const data = await response.json();
+    const container = document.getElementById('studentsContainer');
+    container.innerHTML = '';
+
+    if (!data.students || data.students.length === 0) {
+      container.textContent = 'Öğrenci bulunamadı.';
+      return;
+    }
+
+    data.students.forEach(student => {
+      const card = createStudentCard(student);
+      container.appendChild(card);
+    });
+  } catch (error) {
+    console.error(error);
+    document.getElementById('studentsContainer').textContent = 'Öğrenciler yüklenirken hata oluştu.';
+  }
+}
+
+loadStudents();
+</script>
+
+</body>
+</html>

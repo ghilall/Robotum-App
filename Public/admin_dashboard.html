@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Paneli</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background-color: #ffe6e6;
+      color: #333;
+      width: 280px;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      border-right: 2px solid #f5c6c6;
+    }
+
+    .sidebar h2 {
+      margin-bottom: 20px;
+      color: #c0392b;
+    }
+
+    .sidebar p {
+      font-size: 16px;
+      margin-bottom: 10px;
+      word-break: break-word;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 40px;
+      overflow-y: auto;
+    }
+
+    .dashboard-box {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .dashboard-box h1,
+    .dashboard-box h2 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .dashboard-box p {
+      font-size: 16px;
+      color: #555;
+      margin: 5px 0 20px 0;
+    }
+
+    #logoutBtn {
+      margin-top: auto;
+      background-color: #e74c3c;
+      border: none;
+      color: white;
+      padding: 12px 25px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #logoutBtn:hover {
+      background-color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar with admin info -->
+  <div class="sidebar">
+    <h2>Admin Bilgileri</h2>
+    <p><strong>Ad Soyad:</strong> <span id="userName">Yükleniyor...</span></p>
+    <p><strong>Email:</strong> <span id="userEmail">Yükleniyor...</span></p>
+    <p><strong>Telefon:</strong> <span id="userPhone">Yükleniyor...</span></p>
+    <p><strong>Son Giriş:</strong> <span id="lastLogin">Yükleniyor...</span></p>
+    <button id="logoutBtn">Çıkış Yap</button>
+  </div>
+
+  <!-- Main content area -->
+  <div class="main-content">
+    <div class="dashboard-box">
+      <h1>Hoşgeldiniz Yönetici</h1>
+      <p>Buradan sistem kullanıcılarını ve kursları yönetebilirsiniz.</p>
+    </div>
+
+<!-- Velileri Yönet Section -->
+<div class="dashboard-box">
+  <h2>Velileri Yönet</h2>
+  <div style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+    <button onclick="window.location.href='register_guardian.html'" style="
+      background-color: #c0392b;
+      color: white;
+      padding: 12px 25px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;">
+      Veli Ekle
+    </button>
+
+    <button onclick="window.location.href='delete_guardian.html'" style="
+      background-color: #c0392b;
+      color: white;
+      padding: 12px 25px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;">
+      Veli Sil
+    </button>
+  </div>
+</div>
+
+<!-- Öğrencileri Yönet Section -->
+<div class="dashboard-box">
+  <h2>Öğrencileri Yönet</h2>
+  <div style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+    <button onclick="window.location.href='register_student.html'" style="
+      background-color: #c0392b;
+      color: white;
+      padding: 12px 25px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;">
+      Öğrenci Ekle
+    </button>
+
+    <button onclick="window.location.href='delete_student.html'" style="
+      background-color: #c0392b;
+      color: white;
+      padding: 12px 25px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;">
+      Öğrenci Sil
+    </button>
+  </div>
+</div>
+
+<!-- Kursları Yönet Section -->
+<div class="dashboard-box">
+  <h2>Kursları Yönet</h2>
+  <button onclick="window.location.href='add_course.html'" style="
+    background-color: #c0392b;
+    color: white;
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;">
+    Kurs Ekle
+  </button>
+</div>
+      
+
+  <script>
+    //Load admin info
+    async function loadUser() {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        alert('Lütfen giriş yapınız.');
+        window.location.href = '/';
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const email = encodeURIComponent(user.email);
+
+      try {
+        const response = await fetch(`/api/user?email=${email}`);
+        if (!response.ok) {
+          throw new Error('Kullanıcı bilgisi alınamadı');
+        }
+        const data = await response.json();
+
+        document.getElementById('userName').textContent = data.name;
+        document.getElementById('userEmail').textContent = data.email;
+        document.getElementById('userPhone').textContent = data.phone;
+        document.getElementById('lastLogin').textContent = data.lastLogin
+          ? new Date(data.lastLogin).toLocaleString('tr-TR')
+          : 'Bilinmiyor';
+
+      } catch (error) {
+        alert('Kullanıcı bilgisi yüklenirken hata oluştu.');
+        console.error(error);
+      }
+    }
+    async function searchGuardians(query) {
+    const response = await fetch(`/api/search_guardians?q=${encodeURIComponent(query)}`);
+    if (!response.ok) throw new Error('Arama başarısız');
+      const data = await response.json();
+      return data; // Gelen sonuçlar
+  }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    });
+
+    loadUser();
+  </script>
+</body>
+</html>

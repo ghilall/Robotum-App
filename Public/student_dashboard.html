@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Öğrenci Paneli</title>
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #f0f2f5;
+      padding: 30px;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1 {
+      color: #d33;
+      margin-bottom: 20px;
+    }
+    .info-box {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+      padding: 25px 30px;
+      margin-bottom: 30px;
+    }
+    .info-box p {
+      font-size: 18px;
+      margin: 8px 0;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>Öğrenci Paneli</h1>
+
+  <div class="info-box" id="studentInfo">
+    <p><strong>İsim:</strong> Yükleniyor...</p>
+    <p><strong>Doğum Tarihi:</strong> Yükleniyor...</p>
+    <p><strong>Kurs:</strong> Yükleniyor...</p>
+    <p><strong>Durum:</strong> Yükleniyor...</p>
+  </div>
+
+  <script>
+    async function loadStudentInfo() {
+      const studentId = localStorage.getItem('selectedStudentId');
+      if (!studentId) {
+        alert('Öğrenci seçilmemiş!');
+        window.location.href = '/dashboard.html';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/student/${studentId}`, { credentials: 'include' });
+        if (!res.ok) throw new Error('Öğrenci bilgisi alınamadı.');
+
+        const data = await res.json();
+
+        const infoDiv = document.getElementById('studentInfo');
+        infoDiv.innerHTML = `
+          <p><strong>İsim:</strong> ${data.First_Name} ${data.Last_Name}</p>
+          <p><strong>Doğum Tarihi:</strong> ${new Date(data.Birth_Date).toLocaleDateString('tr-TR')}</p>
+          <p><strong>Kurs:</strong> ${data.Course_Name}</p>
+          <p><strong>Durum:</strong> ${data.Status}</p>
+        `;
+
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    loadStudentInfo();
+  </script>
+</body>
+</html>

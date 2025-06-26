@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Giriş Yap</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      padding: 0 20px;
+      text-align: center;
+    }
+    form {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    h1 {
+      margin-bottom: 30px;
+      font-weight: 700;
+      color: #333;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #555;
+      text-align: left;
+    }
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 4px;
+      font-size: 16px;
+      margin-bottom: 25px;
+      border: 1.5px solid #ccc;
+      border-radius: 5px;
+      transition: border-color 0.3s;
+    }
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: #d33; /* Dark red on focus */
+      outline: none;
+    }
+    button {
+      width: 100%;
+      background-color: #d33; /* Red button */
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #a22;
+    }
+    .error {
+      color: red;
+      font-size: 14px;
+      margin-bottom: 20px;
+      display: none;
+      text-align: left;
+    }
+    p {
+      margin-top: 25px;
+      font-size: 15px;
+      color: #555;
+    }
+    p a {
+      color: #d33;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    p a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <form id="loginForm">
+    <h1>Giriş Yap</h1>
+
+    <label for="email">E-posta:</label>
+    <input type="email" id="email" name="email" required />
+
+    <label for="password">Şifre:</label>
+    <input type="password" id="password" name="password" required />
+
+    <div id="loginError" class="error"></div>
+
+    <button type="submit">Giriş</button>
+
+    <p>Hesabınız yok mu? <a href="/register.html">Kayıt Ol</a></p>
+  </form>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+
+    form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  loginError.style.display = 'none';
+  loginError.textContent = '';
+
+  const email = form.email.value.trim();
+  const password = form.password.value;
+
+  try {
+    const response = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Save user info to localStorage
+      localStorage.setItem('user', JSON.stringify({
+        firstName: data.user.First_Name,
+        lastName: data.user.Last_Name,
+        email: data.user.Email,
+        phone: data.user.Phone,
+      }));
+
+    if (data.user.Role_ID == 1) {
+      window.location.href = '/admin_dashboard.html'; // Redirect to admin dashboard
+    } else if (data.user.Role_ID == 2) {
+      window.location.href = '/teacher_dashboard.html'; // Redirect to teacher dashboard 
+    } else if (data.user.Role_ID == 3) {
+      window.location.href = '/dashboard.html'; // Redirect to guardian dashboard 
+    }
+
+    } else {
+      if (data.error === 'email_not_registered') {
+        loginError.textContent = 'Bu e-posta kayıtlı değil.';
+      } else if (data.error === 'incorrect_password') {
+        loginError.textContent = 'Şifre yanlış.';
+      } else {
+        loginError.textContent = 'Giriş başarısız.';
+      }
+      loginError.style.display = 'block';
+    }
+  } catch {
+    loginError.textContent = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
+    loginError.style.display = 'block';
+  }
+});
+  </script>
+</body>
+</html>
