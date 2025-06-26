@@ -1,5 +1,5 @@
 import { 
-  getAdminStudents, deleteStudent, getStudentList, getPassiveStudents, reactivateStudent, permanentlyDeleteStudent
+  getAdminStudents, deleteStudent, getStudentList, getPassiveStudents, reactivateStudent, permanentlyDeleteStudent, updateStudent, changeStudentCourse
 } from './admin_student_modules.js';
 import { 
   getAdminGuardians, deleteGuardian, searchGuardians, getPassiveGuardians, reactivateGuardian, permanentlyDeleteGuardian
@@ -27,5 +27,7 @@ export {
   getPassiveTeachers,
   reactivateTeacher,
   permanentlyDeleteTeacher,
-  getDashboardStats
+  getDashboardStats,
+  updateStudent,
+  changeStudentCourse
 }; 

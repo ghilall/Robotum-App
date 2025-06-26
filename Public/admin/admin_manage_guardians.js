@@ -207,7 +207,7 @@ window.loadGuardianList = async function loadGuardianList() {
 window.displayGuardianList = function displayGuardianList(guardians) {
   const container = document.getElementById('guardianListContainer');
   if (!guardians || guardians.length === 0) {
-    container.innerHTML = '<div class="no-students">Henüz veli bulunmuyor.</div>';
+    container.innerHTML = '<div class="no-guardians">Veli bulunmuyor.</div>';
     return;
   }
   let html = '';
@@ -215,28 +215,29 @@ window.displayGuardianList = function displayGuardianList(guardians) {
     let studentText = '';
     let activeStudents = [];
     if (guardian.Students && guardian.Students.length > 0) {
-      activeStudents = guardian.Students.filter(s => !s.Status || s.Status !== 'Pasif');
+      activeStudents = guardian.Students.filter(s => !s.Status || s.Status === 'Aktif');
     }
     if (activeStudents.length > 0) {
       const studentNames = activeStudents.map(s => `${s.First_Name} ${s.Last_Name}`).join(', ');
       studentText = `<div class="student-info">👥 Öğrenciler: ${studentNames}</div>`;
     } else {
-      studentText = '<div class="student-info">👥 Öğrenci yok</div>';
+      studentText = '<div class="student-info">👥 Aktif öğrenci yok</div>';
     }
     html += `
       <div class="guardian-item">
         <div class="guardian-info">
           <div class="guardian-name">${guardian.First_Name} ${guardian.Last_Name}</div>
-          <div class="guardian-details">📧 ${guardian.Email}</div>
-          <div class="guardian-details">📞 ${guardian.Phone}</div>
+          <div class="guardian-details">📧 ${guardian.Email || 'Belirtilmemiş'}</div>
+          <div class="guardian-details">📞 ${guardian.Phone || 'Belirtilmemiş'}</div>
           ${studentText}
+          <div class="guardian-status">❌ Durum: Pasif</div>
         </div>
         <div class="guardian-actions">
-          <button class="edit-btn" onclick="editGuardian(${guardian.Guardian_ID}, '${guardian.First_Name} ${guardian.Last_Name}')">
-            ✏️ Düzenle
+          <button class="reactivate-btn" onclick="window.reactivateGuardian(${guardian.Guardian_ID}, '${guardian.First_Name} ${guardian.Last_Name}')">
+            ✅ Aktifleştir
           </button>
-          <button class="delete-btn" onclick="deleteGuardian(${guardian.Guardian_ID}, '${guardian.First_Name} ${guardian.Last_Name}')">
-            ⏸️ Pasife Al
+          <button class="delete-btn" onclick="window.permanentlyDeleteGuardian(${guardian.Guardian_ID}, '${guardian.First_Name} ${guardian.Last_Name}')">
+            🗑️ Kalıcı Sil
           </button>
         </div>
       </div>

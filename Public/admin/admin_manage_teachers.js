@@ -79,7 +79,7 @@ window.displayPassiveTeachers = function displayPassiveTeachers(teachers) {
             <div class="teacher-name">${teacher.First_Name} ${teacher.Last_Name}</div>
             <div class="teacher-details">📧 ${teacher.Email || 'Belirtilmemiş'}</div>
             <div class="teacher-details">📞 ${teacher.Phone || 'Belirtilmemiş'}</div>
-            <div class="teacher-details">🎓 Deneyim: ${teacher.Experience || '0'} yıl</div>
+            <div class="teacher-details">🎓 Deneyim: ${teacher.Experience ? teacher.Experience : ''}</div>
             <div class="teacher-details">📅 Başlangıç: ${startDate} | Bitiş: ${endDate}</div>
             <div class="teacher-status">❌ Durum: Pasif</div>
           </div>
@@ -271,7 +271,7 @@ window.displayTeacherList = function displayTeacherList(teachers) {
             <div class="teacher-name">${teacher.First_Name} ${teacher.Last_Name}</div>
             <div class="teacher-details">📧 ${teacher.Email || 'Belirtilmemiş'}</div>
             <div class="teacher-details">📞 ${teacher.Phone || 'Belirtilmemiş'}</div>
-            <div class="teacher-details">🎓 Deneyim: ${teacher.Experience || '0'}</div>
+            <div class="teacher-details">🎓 Deneyim: ${teacher.Experience ? teacher.Experience : ''}</div>
             <div class="teacher-details">📅 Başlangıç: ${startDate} | Bitiş: ${endDate}</div>
           </div>
           <div class="teacher-actions">

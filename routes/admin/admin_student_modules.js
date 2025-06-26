@@ -70,7 +70,7 @@ export const getStudentList = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        s."Student_ID", u."First_Name", u."Last_Name", c."Course_Name", c."Level", c."Category_ID",
+        s."Student_ID", u."First_Name", u."Last_Name", s."Birth_Date", c."Course_Name", c."Level", c."Category_ID",
         cat."Category_Name", p."Day", p."Start_Time", p."End_Time", p."Classroom_ID"
       FROM "Students" s
       JOIN "Users" u ON s."User_ID" = u."User_ID"
@@ -100,6 +100,7 @@ export const getStudentList = async (req, res) => {
           firstName: row.First_Name,
           lastName: row.Last_Name,
           studentId: row.Student_ID,
+          birthDate: row.Birth_Date,
           courseLevel: row.Level,
           categoryId: row.Category_ID,
           categoryName: row.Category_Name,
@@ -251,10 +252,15 @@ export const updateStudent = async (req, res) => {
       return res.status(404).json({ error: 'Öğrenci bulunamadı.' });
     }
     const userId = userResult.rows[0].User_ID;
-    // Update Users table
+    // Update Users table (name, surname)
     await pool.query(
-      `UPDATE "Users" SET "First_Name" = $1, "Last_Name" = $2, "Birth_Date" = $3 WHERE "User_ID" = $4`,
-      [firstName, lastName, birthDate, userId]
+      `UPDATE "Users" SET "First_Name" = $1, "Last_Name" = $2 WHERE "User_ID" = $3`,
+      [firstName, lastName, userId]
+    );
+    // Update Students table (birth date)
+    await pool.query(
+      `UPDATE "Students" SET "Birth_Date" = $1 WHERE "Student_ID" = $2`,
+      [birthDate, studentId]
     );
     res.json({ message: 'Öğrenci bilgileri güncellendi.' });
   } catch (err) {

@@ -936,10 +936,64 @@ if (editStudentForm) {
 
 // Change Course logic
 window.changeStudentCourse = function changeStudentCourse(studentId) {
-  // Store editing student id
+  // Find student data from the currently loaded list
+  let student = null;
+  let courseName = '';
+  if (window.allStudentsData) {
+    for (const cName in window.allStudentsData) {
+      const students = window.allStudentsData[cName];
+      if (students[studentId]) {
+        student = students[studentId];
+        courseName = cName;
+        break;
+      }
+    }
+  }
+  if (!student) {
+    alert('Öğrenci verisi bulunamadı.');
+    return;
+  }
+  // Set student info at the top of the modal
+  document.getElementById('changeCourseStudentInfo').innerHTML =
+    `<strong>${student.firstName} ${student.lastName}</strong><br>Mevcut Kurs: <strong>${courseName}</strong>`;
+  // Pre-select current course and program if possible
   window.changingCourseStudentId = studentId;
   document.getElementById('changeCourseModal').style.display = 'flex';
-  // Optionally, pre-select current course/program if needed
+  // Always load categories and levels when opening the modal
+  loadChangeModalCategoriesAndLevels();
+  // Pre-fill course and program after loading options
+  setTimeout(() => {
+    if (student.courseLevel) {
+      changeLevelFilter.value = student.courseLevel;
+      updateChangeCourseOptions();
+    }
+    // Try to select the current course
+    if (student.categoryId) {
+      changeCategoryFilter.value = student.categoryId;
+      updateChangeCourseOptions();
+    }
+    setTimeout(() => {
+      if (student.program && student.program.length > 0) {
+        const prog = student.program[0];
+        // Try to select course, day, and program
+        for (let i = 0; i < changeCourseSelect.options.length; i++) {
+          if (changeCourseSelect.options[i].text === courseName) {
+            changeCourseSelect.selectedIndex = i;
+            break;
+          }
+        }
+        changeProgramDaySelect.value = prog.day;
+        loadAndFilterChangePrograms().then(() => {
+          for (let i = 0; i < changeProgramSelect.options.length; i++) {
+            if (changeProgramSelect.options[i].text.includes(prog.start) && changeProgramSelect.options[i].text.includes(prog.end)) {
+              changeProgramSelect.selectedIndex = i;
+              break;
+            }
+          }
+        });
+      }
+    }, 300);
+  }, 300);
 };
 
 // Modal open/close logic for change course
@@ -1240,11 +1294,11 @@ window.displayStudentList = function displayStudentListWithEdit(groupedStudents)
               <button class="edit-btn" onclick="editStudent(${student.studentId})">
                 ✏️ Düzenle
               </button>
-              <button class="delete-btn" onclick="deleteStudent(${student.studentId}, '${student.firstName} ${student.lastName}')">
-                ⏸️ Pasife Al
-              </button>
               <button class="change-course-btn" onclick="changeStudentCourse(${student.studentId})">
                 🔄 Kurs Değiştir
+              </button>
+              <button class="delete-btn" onclick="deleteStudent(${student.studentId}, '${student.firstName} ${student.lastName}')">
+                ⏸️ Pasife Al
               </button>
             </div>
           </div>
@@ -1256,3 +1310,6 @@ window.displayStudentList = function displayStudentListWithEdit(groupedStudents)
   }
   container.innerHTML = html;
 };
+
+// Make sure the student list always uses the version with the Kurs Değiştir button
+window.displayStudentList = window.displayStudentListWithEdit;
