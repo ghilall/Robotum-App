@@ -67,7 +67,6 @@
       margin: 5px 0 20px 0;
     }
 
-    /* Öğrenci Kayıt Normalde Burada Olmayacak --*/ 
     .dashboard-box button {
       margin-top: 22px;
       background-color: #d33;
@@ -193,8 +192,9 @@
 
     // Logout handler
     document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('user');
-      window.location.href = '/';
+      if(user.role_ID === 1) {
+        window.location.href = '/admin_dashboard.html';
+      }
     });
 
     // Load students and display cards

@@ -315,6 +315,17 @@
         <select id="levelFilter">
           <option value="">Tümü</option>
         </select>
+        <label for="programDay">Gün</label>
+        <select id="programDay" name="programDay" required>
+          <option value="">Gün seçiniz</option>
+          <option value="Pazartesi">Pazartesi</option>
+          <option value="Salı">Salı</option>
+          <option value="Çarşamba">Çarşamba</option>
+          <option value="Perşembe">Perşembe</option>
+          <option value="Cuma">Cuma</option>
+          <option value="Cumartesi">Cumartesi</option>
+          <option value="Pazar">Pazar</option>
+        </select>
         <label for="courseId">Kurs</label>
         <select id="courseId" name="courseId" required>
           <option value="">Yükleniyor...</option>
@@ -502,6 +513,62 @@
         <button type="submit">Kayıt Et</button>
         <div id="teacherPasswordError" class="error" style="display:none; color:red; font-size:small; margin-bottom:15px;">Şifreler eşleşmiyor. Lütfen aynı şifreyi girin.</div>
         <div id="teacherRegisterError" class="error" style="display:none; color:red; font-size:small; margin-bottom:15px;">Kayıt başarısız oldu.</div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Öğrenci Düzenle Modalı -->
+  <div id="editStudentModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); justify-content:center; align-items:center;">
+    <div class="registration-container" style="position:relative; margin:auto;">
+      <button id="closeEditStudentModalBtn" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+      <h1>Öğrenci Bilgilerini Düzenle</h1>
+      <form id="editStudentForm">
+        <label for="editFirstName">Ad</label>
+        <input type="text" id="editFirstName" name="firstName" required />
+        <label for="editLastName">Soyad</label>
+        <input type="text" id="editLastName" name="lastName" required />
+        <label for="editBirthDate">Doğum Tarihi</label>
+        <input type="date" id="editBirthDate" name="birthDate" required />
+        <!-- Add other editable attributes here as needed -->
+        <button type="submit">Kaydet</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Kurs Değiştir Modalı -->
+  <div id="changeCourseModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); justify-content:center; align-items:center;">
+    <div class="registration-container" style="position:relative; margin:auto;">
+      <button id="closeChangeCourseModalBtn" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+      <h1>Kurs ve Program Değiştir</h1>
+      <form id="changeCourseForm">
+        <label for="changeCategoryFilter">Kategori (opsiyonel)</label>
+        <select id="changeCategoryFilter">
+          <option value="">Tümü</option>
+        </select>
+        <label for="changeLevelFilter">Seviye (opsiyonel)</label>
+        <select id="changeLevelFilter">
+          <option value="">Tümü</option>
+        </select>
+        <label for="changeCourseId">Kurs</label>
+        <select id="changeCourseId" name="courseId" required>
+          <option value="">Yükleniyor...</option>
+        </select>
+        <label for="changeProgramDay">Gün</label>
+        <select id="changeProgramDay" name="programDay" required>
+          <option value="">Gün seçiniz</option>
+          <option value="Pazartesi">Pazartesi</option>
+          <option value="Salı">Salı</option>
+          <option value="Çarşamba">Çarşamba</option>
+          <option value="Perşembe">Perşembe</option>
+          <option value="Cuma">Cuma</option>
+          <option value="Cumartesi">Cumartesi</option>
+          <option value="Pazar">Pazar</option>
+        </select>
+        <label for="changeProgramId">Program Saati</label>
+        <select id="changeProgramId" name="programId" required>
+          <option value="">Saat seçiniz</option>
+        </select>
+        <button type="submit">Kaydet</button>
       </form>
     </div>
   </div>
