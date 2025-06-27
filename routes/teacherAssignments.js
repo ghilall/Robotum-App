@@ -124,11 +124,24 @@ export const getTeacherAssignments = async (req, res) => {
   }
 
   try {
-    const result = await pool.query(`
+    // 1. Get all courses (filtered if needed)
+    const courseQuery = `
+      SELECT "Course_ID", "Course_Name", "Level"
+      FROM "Courses"
+      WHERE 1=1
+      ${courseId ? ' AND "Course_ID" = $1' : ''}
+      ORDER BY "Course_Name"
+    `;
+    const courseValues = courseId ? [courseId] : [];
+    const coursesResult = await pool.query(courseQuery, courseValues);
+    const courses = coursesResult.rows;
+
+    // 2. Get all assignments in the filter range
+    const assignmentResult = await pool.query(`
       SELECT 
         pt."Program_Teacher_ID", pt."Date", pt."Role",
         t."Teacher_ID", u."First_Name" AS "Teacher_First_Name", u."Last_Name" AS "Teacher_Last_Name",
-        c."Course_ID", c."Course_Name", c."Level"
+        c."Course_ID"
       FROM "Program_Teachers" pt
       JOIN "Teachers" t ON pt."Teacher_ID" = t."Teacher_ID"
       JOIN "Users" u ON t."User_ID" = u."User_ID"
@@ -136,8 +149,46 @@ export const getTeacherAssignments = async (req, res) => {
       WHERE u."Status" = 'Aktif' ${whereClause}
       ORDER BY pt."Date" DESC
     `, values);
+    const assignments = assignmentResult.rows;
 
-    res.json({ assignments: result.rows });
+    // 3. Group assignments by course, date, and role
+    const validRoles = ['Asıl', 'Yardımcı', 'Stajyer'];
+    // Find all unique dates in the assignments (filtered by date range)
+    let allDates = new Set();
+    assignments.forEach(a => allDates.add(a.Date.toISOString().split('T')[0]));
+    if (startDate && endDate) {
+      // Fill in all dates in the range
+      let d = new Date(startDate);
+      const end = new Date(endDate);
+      while (d <= end) {
+        allDates.add(d.toISOString().split('T')[0]);
+        d.setDate(d.getDate() + 1);
+      }
+    }
+    allDates = Array.from(allDates).sort();
+
+    // Build grouped structure
+    const grouped = [];
+    for (const course of courses) {
+      for (const date of allDates) {
+        const courseAssignments = assignments.filter(a => a.Course_ID === course.Course_ID && a.Date.toISOString().split('T')[0] === date);
+        const rolesArr = validRoles.map(roleName => {
+          const found = courseAssignments.find(a => a.Role === roleName);
+          return {
+            role: roleName,
+            assignment: found || null
+          };
+        });
+        grouped.push({
+          Course_ID: course.Course_ID,
+          Course_Name: course.Course_Name,
+          Level: course.Level,
+          Date: date,
+          roles: rolesArr
+        });
+      }
+    }
+    res.json({ assignments: grouped });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Sunucu hatası.' });

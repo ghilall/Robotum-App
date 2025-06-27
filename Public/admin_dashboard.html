@@ -483,9 +483,6 @@
             <label for="teacherCategoryId">Kategori:</label>
             <select id="teacherCategoryId" name="categoryId" required>
               <option value="">Kategori Seçiniz</option>
-              <option value="1">Robotik Kodlama</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
             </select>
           </div>
         </div>
@@ -706,6 +703,23 @@
       loadAllCourses();
       updateCourseOptions();
       displayStudentList(groupedStudents);
+      if (typeof loadCategories === 'function') {
+        loadCategories('teacherCategoryId');
+      } else {
+        fetch('/api/categories', { credentials: 'include' })
+          .then(res => res.json())
+          .then(data => {
+            const categorySelect = document.getElementById('teacherCategoryId');
+            categorySelect.innerHTML = '<option value="">Kategori Seçiniz</option>';
+            data.categories.forEach(cat => {
+              const option = document.createElement('option');
+              option.value = cat.Category_ID;
+              option.textContent = cat.Category_Name;
+              categorySelect.appendChild(option);
+            });
+          });
+      }
+      loadTeacherCategories();
     });
 
     // Display student list grouped by course
@@ -940,6 +954,7 @@
     let teacherIti;
     if (openTeacherModalBtn && teacherModal && closeTeacherModalBtn) {
       openTeacherModalBtn.addEventListener('click', () => {
+        loadTeacherCategories();
         teacherModal.style.display = 'flex';
         setTimeout(() => {
           const teacherPhoneInput = document.getElementById('teacherPhone');
@@ -1083,6 +1098,25 @@
       window.addEventListener('click', (e) => {
         if (e.target === studentModal) studentModal.style.display = 'none';
       });
+    }
+
+    async function loadTeacherCategories() {
+      const categorySelect = document.getElementById('teacherCategoryId');
+      categorySelect.innerHTML = '<option value="">Kategori Seçiniz</option>';
+      try {
+        const res = await fetch('/api/categories', { credentials: 'include' });
+        const data = await res.json();
+        if (data.categories && data.categories.length > 0) {
+          data.categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.Category_ID;
+            option.textContent = cat.Category_Name;
+            categorySelect.appendChild(option);
+          });
+        }
+      } catch (err) {
+        categorySelect.innerHTML = '<option value="">Kategoriler yüklenemedi</option>';
+      }
     }
 
   </script>

@@ -295,6 +295,20 @@
       <form id="assignmentForm">
         <div class="form-row">
           <div class="form-group">
+            <label for="teacherCategoryFilter">Kategori:</label>
+            <select id="teacherCategoryFilter">
+              <option value="">Tümü</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="teacherExperienceFilter">Deneyim:</label>
+            <select id="teacherExperienceFilter">
+              <option value="">Tümü</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
             <label for="teacherId">Öğretmen:</label>
             <select id="teacherId" name="teacherId" required>
               <option value="">Öğretmen seçiniz</option>
@@ -349,8 +363,8 @@
             <label for="filterRole">Rol:</label>
             <select id="filterRole">
               <option value="">Tümü</option>
-              <option value="Asıl">Asıl</option>
-              <option value="Yardımcı">Yardımcı</option>
+              <option value="Asıl">Asıl Öğretmen</option>
+              <option value="Yardımcı">Yardımcı Öğretmen</option>
               <option value="Stajyer">Stajyer</option>
             </select>
           </div>
@@ -369,22 +383,25 @@
         <table>
           <thead>
             <tr>
-              <th>Öğretmen</th>
               <th>Kurs</th>
+              <th>Asıl Öğretmen</th>
+              <th>Yardımcı Öğretmen</th>
+              <th>Stajyer</th>
               <th>Tarih</th>
-              <th>Rol</th>
               <th>İşlemler</th>
             </tr>
           </thead>
           <tbody id="assignmentsTableBody">
             <tr>
-              <td colspan="7" class="loading">Yükleniyor...</td>
+              <td colspan="6" class="loading">Yükleniyor...</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
+
+  <script src="admin/admin_manage_teachers.js"></script>
 
   <script>
     // Global variables
@@ -398,56 +415,9 @@
       loadCourses();
       loadAssignments();
       setupEventListeners();
+      loadCategories();
+      renderAssignmentsTable();
     });
-
-    // Load teachers for dropdown
-    async function loadTeachers() {
-      try {
-        const response = await fetch('/api/admin/teachers', { credentials: 'include' });
-        if (!response.ok) throw new Error('Öğretmenler alınamadı');
-        
-        const data = await response.json();
-        teachers = data.teachers;
-        
-        const teacherSelect = document.getElementById('teacherId');
-        const filterTeacher = document.getElementById('filterTeacher');
-        
-        teachers.forEach(teacher => {
-          const option = document.createElement('option');
-          option.value = teacher.Teacher_ID;
-          option.textContent = `${teacher.First_Name} ${teacher.Last_Name}`;
-          teacherSelect.appendChild(option.cloneNode(true));
-          filterTeacher.appendChild(option);
-        });
-      } catch (error) {
-        showError('Öğretmenler yüklenirken hata oluştu: ' + error.message);
-      }
-    }
-
-    // Load courses for dropdown
-    async function loadCourses() {
-      try {
-        const response = await fetch('/api/courses', { credentials: 'include' });
-        if (!response.ok) throw new Error('Kurslar alınamadı');
-        
-        const data = await response.json();
-        courses = data.courses;
-        
-        const courseSelect = document.getElementById('courseId');
-        const filterCourse = document.getElementById('filterCourse');
-        
-        courses.forEach(course => {
-          const option = document.createElement('option');
-          option.value = course.Course_ID;
-          option.textContent = course.Course_Name;
-          courseSelect.appendChild(option.cloneNode(true));
-          filterCourse.appendChild(option);
-        });
-      } catch (error) {
-        showError('Kurslar yüklenirken hata oluştu: ' + error.message);
-      }
-    }
-
     // Load assignments
     async function loadAssignments() {
       try {
@@ -460,7 +430,7 @@
         if (!response.ok) throw new Error('Atamalar alınamadı');
         
         const data = await response.json();
-        assignments = data.assignments;
+        assignments = Array.isArray(data.assignments) ? data.assignments : [];
         renderAssignmentsTable();
       } catch (error) {
         showError('Atamalar yüklenirken hata oluştu: ' + error.message);
@@ -485,33 +455,6 @@
       return filters;
     }
 
-    // Render assignments table
-    function renderAssignmentsTable() {
-      const tbody = document.getElementById('assignmentsTableBody');
-      tbody.innerHTML = '';
-
-      if (assignments.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6b7280;">Atama bulunamadı</td></tr>';
-        return;
-      }
-
-      assignments.forEach(assignment => {
-        const row = document.createElement('tr');
-
-        row.innerHTML = `
-          <td>${assignment.Teacher_First_Name} ${assignment.Teacher_Last_Name}</td>
-          <td>${assignment.Course_Name} (${assignment.Level})</td>
-          <td>${new Date(assignment.Date).toLocaleDateString('tr-TR')}</td>
-          <td>${assignment.Role || 'Belirtilmemiş'}</td>
-          <td>
-            <button class="delete-btn" onclick="deleteAssignment(${assignment.Program_Teacher_ID})">Sil</button>
-          </td>
-        `;
-        
-        tbody.appendChild(row);
-      });
-    }
-
     // Setup event listeners
     function setupEventListeners() {
       // Form submission
@@ -523,6 +466,7 @@
       document.getElementById('filterRole').addEventListener('change', loadAssignments);
       document.getElementById('filterStartDate').addEventListener('change', loadAssignments);
       document.getElementById('filterEndDate').addEventListener('change', loadAssignments);
+      document.getElementById('teacherExperienceFilter').addEventListener('change', filterTeacherDropdown);
     }
 
     // Handle form submission
@@ -632,6 +576,198 @@
 
     // Set minimum date to today
     document.getElementById('assignmentDate').min = new Date().toISOString().split('T')[0];
+
+    // Populate experience dropdown
+    function populateExperienceDropdown(teachers, dropdownId = 'teacherExperienceFilter') {
+      const experienceSelect = document.getElementById(dropdownId);
+      if (!experienceSelect) return;
+      const experiences = Array.from(new Set(teachers.map(t => t.Experience).filter(Boolean)));
+      experienceSelect.innerHTML = '<option value="">Tümü</option>';
+      experiences.forEach(exp => {
+        const option = document.createElement('option');
+        option.value = exp;
+        option.textContent = exp;
+        experienceSelect.appendChild(option);
+      });
+    }
+
+    // Load teachers
+    async function loadTeachers() {
+      try {
+        const response = await fetch('/api/admin/teachers', { credentials: 'include' });
+        if (!response.ok) throw new Error('Öğretmenler alınamadı');
+        const data = await response.json();
+        teachers = data.teachers;
+        populateCategoryAndExperienceDropdowns(teachers);
+        filterTeacherDropdown();
+      } catch (error) {
+        showError('Öğretmenler yüklenirken hata oluştu: ' + error.message);
+      }
+    }
+
+    // Add this function to populate Kategori and Deneyim dynamically
+    function populateCategoryAndExperienceDropdowns(teachers) {
+      // Kategori
+      const categorySelect = document.getElementById('teacherCategoryFilter');
+      const categories = Array.from(new Set(teachers.map(t => t.CategoryName).filter(Boolean)));
+      categorySelect.innerHTML = '<option value="">Tümü</option>';
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+      });
+      // Deneyim
+      const experienceSelect = document.getElementById('teacherExperienceFilter');
+      const experiences = Array.from(new Set(teachers.map(t => t.Experience).filter(Boolean)));
+      experienceSelect.innerHTML = '<option value="">Tümü</option>';
+      experiences.forEach(exp => {
+        const option = document.createElement('option');
+        option.value = exp;
+        option.textContent = exp;
+        experienceSelect.appendChild(option);
+      });
+    }
+
+    // Filter teacher dropdown
+    function filterTeacherDropdown() {
+      const category = document.getElementById('teacherCategoryFilter').value;
+      const experience = document.getElementById('teacherExperienceFilter').value;
+      const teacherSelect = document.getElementById('teacherId');
+      teacherSelect.innerHTML = '<option value="">Öğretmen seçiniz</option>';
+      teachers
+        .filter(t =>
+          (!category || String(t.Category_ID) === category) &&
+          (!experience || t.Experience === experience)
+        )
+        .sort((a, b) => {
+          const nameA = `${a.First_Name} ${a.Last_Name}`.toLocaleLowerCase('tr-TR');
+          const nameB = `${b.First_Name} ${b.Last_Name}`.toLocaleLowerCase('tr-TR');
+          return nameA.localeCompare(nameB, 'tr-TR');
+        })
+        .forEach(teacher => {
+          const option = document.createElement('option');
+          option.value = teacher.Teacher_ID;
+          option.textContent = `${teacher.First_Name} ${teacher.Last_Name}`;
+          teacherSelect.appendChild(option);
+        });
+    }
+
+    // Populate teacher dropdown
+    function populateTeacherDropdown(teachers, dropdownId = 'teacherId') {
+      const teacherSelect = document.getElementById(dropdownId);
+      if (!teacherSelect) return;
+      teacherSelect.innerHTML = '<option value="">Öğretmen seçiniz</option>';
+      teachers.forEach(teacher => {
+        const option = document.createElement('option');
+        option.value = teacher.Teacher_ID;
+        option.textContent = `${teacher.First_Name} ${teacher.Last_Name}`;
+        teacherSelect.appendChild(option);
+      });
+    }
+
+    // Populate course dropdown
+    function populateCourseDropdown(courses, dropdownId = 'courseId') {
+      const courseSelect = document.getElementById(dropdownId);
+      if (!courseSelect) return;
+      courseSelect.innerHTML = '<option value="">Kurs seçiniz</option>';
+      courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.Course_ID;
+        option.textContent = course.Course_Name;
+        courseSelect.appendChild(option);
+      });
+    }
+
+    // Load courses
+    async function loadCourses() {
+      try {
+        const response = await fetch('/api/courses', { credentials: 'include' });
+        if (!response.ok) throw new Error('Kurslar alınamadı');
+        const data = await response.json();
+        courses = data.courses;
+        const courseSelect = document.getElementById('courseId');
+        courseSelect.innerHTML = '<option value="">Kurs seçiniz</option>';
+        data.courses.forEach(course => {
+          const option = document.createElement('option');
+          option.value = course.Course_ID;
+          option.textContent = course.Course_Name;
+          courseSelect.appendChild(option);
+        });
+        // If you have a filterCourse dropdown, also populate it here
+        const filterCourse = document.getElementById('filterCourse');
+        if (filterCourse) {
+          filterCourse.innerHTML = '<option value="">Tümü</option>';
+          data.courses.forEach(course => {
+            const option = document.createElement('option');
+            option.value = course.Course_ID;
+            option.textContent = course.Course_Name;
+            filterCourse.appendChild(option);
+          });
+        }
+      } catch (error) {
+        showError('Kurslar yüklenirken hata oluştu: ' + error.message);
+      }
+    }
+
+    // Render assignments table
+    function renderAssignmentsTable() {
+      const tbody = document.getElementById('assignmentsTableBody');
+      tbody.innerHTML = '';
+
+      if (!Array.isArray(assignments) || assignments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #6b7280;">Atama bulunamadı</td></tr>';
+        return;
+      }
+
+      assignments.forEach(group => {
+        const rolesArr = Array.isArray(group.roles) ? group.roles : [];
+        const asil = rolesArr.find(r => r.role === 'Asıl') || {};
+        const yardimci = rolesArr.find(r => r.role === 'Yardımcı') || {};
+        const stajyer = rolesArr.find(r => r.role === 'Stajyer') || {};
+
+        // Teacher names or 'Atanmamış'
+        const asilName = asil.assignment ? `${asil.assignment.Teacher_First_Name} ${asil.assignment.Teacher_Last_Name}` : 'Atanmamış';
+        const yardimciName = yardimci.assignment ? `${yardimci.assignment.Teacher_First_Name} ${yardimci.assignment.Teacher_Last_Name}` : 'Atanmamış';
+        const stajyerName = stajyer.assignment ? `${stajyer.assignment.Teacher_First_Name} ${stajyer.assignment.Teacher_Last_Name}` : 'Atanmamış';
+
+        // Delete buttons (if assignment exists)
+        const asilDelete = asil.assignment ? `<button class=\"delete-btn\" onclick=\"deleteAssignment(${asil.assignment.Program_Teacher_ID})\">Sil</button>` : '';
+        const yardimciDelete = yardimci.assignment ? `<button class=\"delete-btn\" onclick=\"deleteAssignment(${yardimci.assignment.Program_Teacher_ID})\">Sil</button>` : '';
+        const stajyerDelete = stajyer.assignment ? `<button class=\"delete-btn\" onclick=\"deleteAssignment(${stajyer.assignment.Program_Teacher_ID})\">Sil</button>` : '';
+        const islemCell = [asilDelete, yardimciDelete, stajyerDelete].filter(Boolean).join(' ');
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${group.Course_Name} (${group.Level || ''})</td>
+          <td>${asilName}</td>
+          <td>${yardimciName}</td>
+          <td>${stajyerName}</td>
+          <td>${new Date(group.Date).toLocaleDateString('tr-TR')}</td>
+          <td>${islemCell}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Add this function to load categories from the database
+    async function loadCategories() {
+      try {
+        const response = await fetch('/api/categories', { credentials: 'include' });
+        if (!response.ok) throw new Error('Kategoriler alınamadı');
+        const data = await response.json();
+        const categorySelect = document.getElementById('teacherCategoryFilter');
+        categorySelect.innerHTML = '<option value="">Tümü</option>';
+        data.categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.Category_ID;
+          option.textContent = cat.Category_Name;
+          categorySelect.appendChild(option);
+        });
+      } catch (error) {
+        showError('Kategoriler yüklenirken hata oluştu: ' + error.message);
+      }
+    }
   </script>
 </body>
 </html> 

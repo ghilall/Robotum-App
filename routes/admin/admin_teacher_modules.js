@@ -185,7 +185,7 @@ export const updateTeacher = async (req, res) => {
     );
     // Update Staff table
     await pool.query(
-      `UPDATE "Staff" SET "Salary" = $1, "SocialSecurityNumber" = $2, "EmploymentType" = $3, "Start_Date" = $4, "End_Date" = $5 WHERE "Staff_ID" = $6`,
+      `UPDATE "Staff" SET "Salary" = $1, "Social_Security_Number" = $2, "Employment_Type" = $3, "Start_Date" = $4, "End_Date" = $5 WHERE "Staff_ID" = $6`,
       [salary, socialSecurityNumber, employmentType, startDate, endDate, staffId]
     );
     // Update Teachers table
