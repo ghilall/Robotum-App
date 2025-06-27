@@ -22,23 +22,23 @@
     </div>
 
     <div class="sidebar-menu">
-      <div class="menu-item active" onclick="showSection('dashboard')">
+      <div class="menu-item active" onclick="showSection('dashboard', event)">
         <i>📊</i>
         <span>Dashboard</span>
       </div>
-      <div class="menu-item" onclick="showSection('guardians')">
+      <div class="menu-item" onclick="showSection('guardians', event)">
         <i>👥</i>
         <span>Veli Yönetimi</span>
       </div>
-      <div class="menu-item" onclick="showSection('students')">
+      <div class="menu-item" onclick="showSection('students', event)">
         <i>🎓</i>
         <span>Öğrenci Yönetimi</span>
       </div>
-      <div class="menu-item" onclick="showSection('teachers')">
+      <div class="menu-item" onclick="showSection('teachers', event)">
         <i>👨‍🏫</i>
         <span>Öğretmen Yönetimi</span>
       </div>
-      <div class="menu-item" onclick="showSection('courses')">
+      <div class="menu-item" onclick="showSection('courses', event)">
         <i>📚</i>
         <span>Kurs Yönetimi</span>
       </div>
@@ -395,16 +395,16 @@
         <div class="row" style="display:flex; gap:20px; margin-bottom:15px; flex-wrap:wrap;">
           <div class="password-wrapper" style="flex:1; min-width:280px;">
             <label for="guardianPassword">Şifre:</label>
-            <div class="password-input-container" style="display:flex; align-items:center; border:1.5px solid #ccc; border-radius:5px; overflow:hidden; height:48px;">
-              <input type="password" id="guardianPassword" name="password" required style="flex:1; border:none; padding:12px; font-size:16px; outline:none; box-sizing:border-box;" />
-              <button type="button" class="togglePassword">Göster</button>
+            <div class="password-input-container" style="display:flex; align-items:center; gap:8px; border:1.5px solid #ccc; border-radius:5px; overflow:hidden; height:48px;">
+              <input type="password" id="guardianPassword" name="password" required style="flex:1; border:none; padding:12px; font-size:16px; outline:none; box-sizing:border-box; vertical-align:middle; margin-top:0; margin-bottom:0; line-height:24px; height:40px;" />
+              <button type="button" class="togglePassword" style="padding:10px 14px; font-size:14px; cursor:pointer; background:none; border:1.5px solid #d33; border-radius:5px; color:#d33; transition:background-color 0.3s, color 0.3s; height:40px; display:flex; align-items:center;">Göster</button>
             </div>
           </div>
           <div class="password-wrapper" style="flex:1; min-width:280px;">
             <label for="guardianConfirmPassword">Şifre (Tekrar):</label>
-            <div class="password-input-container" style="display:flex; align-items:center; border:1.5px solid #ccc; border-radius:5px; overflow:hidden; height:48px;">
-              <input type="password" id="guardianConfirmPassword" name="confirmPassword" required style="flex:1; border:none; padding:12px; font-size:16px; outline:none; box-sizing:border-box;" />
-              <button type="button" class="togglePassword">Göster</button>
+            <div class="password-input-container" style="display:flex; align-items:center; gap:8px; border:1.5px solid #ccc; border-radius:5px; overflow:hidden; height:48px;">
+              <input type="password" id="guardianConfirmPassword" name="confirmPassword" required style="flex:1; border:none; padding:12px; font-size:16px; outline:none; box-sizing:border-box; vertical-align:middle; margin-top:0; margin-bottom:0; line-height:24px; height:40px;" />
+              <button type="button" class="togglePassword" style="padding:10px 14px; font-size:14px; cursor:pointer; background:none; border:1.5px solid #d33; border-radius:5px; color:#d33; transition:background-color 0.3s, color 0.3s; height:40px; display:flex; align-items:center;">Göster</button>
             </div>
           </div>
         </div>
@@ -468,16 +468,16 @@
         <div class="row" style="display:flex; gap:20px; margin-bottom:15px; flex-wrap:wrap;">
           <div class="half" style="flex:1; min-width:280px;">
             <label for="teacherPassword">Şifre:</label>
-            <div class="password-input-container" style="display:flex; align-items:center; border:1.5px solid #ccc; border-radius:5px; overflow:hidden; height:48px;">
-              <input type="password" id="teacherPassword" name="password" required style="flex:1; border:none; padding:12px; font-size:16px; outline:none; box-sizing:border-box;" />
-              <button type="button" class="togglePassword">Göster</button>
+            <div class="password-input-container" style="display:flex; align-items:center; gap:8px; border:1.5px solid #ccc; border-radius:5px; overflow:hidden; height:48px;">
+              <input type="password" id="teacherPassword" name="password" required style="flex:1; border:none; padding:12px; font-size:16px; outline:none; box-sizing:border-box; vertical-align:middle; margin-top:0; margin-bottom:0; line-height:24px; height:40px;" />
+              <button type="button" class="togglePassword" style="padding:10px 14px; font-size:14px; cursor:pointer; background:none; border:1.5px solid #d33; border-radius:5px; color:#d33; transition:background-color 0.3s, color 0.3s; height:40px; display:flex; align-items:center;">Göster</button>
             </div>
           </div>
           <div class="half" style="flex:1; min-width:280px;">
             <label for="teacherConfirmPassword">Şifre (Tekrar):</label>
-            <div class="password-input-container" style="display:flex; align-items:center; border:1.5px solid #ccc; border-radius:5px; overflow:hidden; height:48px;">
-              <input type="password" id="teacherConfirmPassword" name="confirmPassword" required style="flex:1; border:none; padding:12px; font-size:16px; outline:none; box-sizing:border-box;" />
-              <button type="button" class="togglePassword">Göster</button>
+            <div class="password-input-container" style="display:flex; align-items:center; gap:8px; border:1.5px solid #ccc; border-radius:5px; overflow:hidden; height:48px;">
+              <input type="password" id="teacherConfirmPassword" name="confirmPassword" required style="flex:1; border:none; padding:12px; font-size:16px; outline:none; box-sizing:border-box; vertical-align:middle; margin-top:0; margin-bottom:0; line-height:24px; height:40px;" />
+              <button type="button" class="togglePassword" style="padding:10px 14px; font-size:14px; cursor:pointer; background:none; border:1.5px solid #d33; border-radius:5px; color:#d33; transition:background-color 0.3s, color 0.3s; height:40px; display:flex; align-items:center;">Göster</button>
             </div>
           </div>
         </div>
@@ -741,12 +741,6 @@
       loadDashboardStats();
       showSection('dashboard');
       loadStudentList();
-      window.allStudentsData = data.grouped;
-      displayStudentList(data.grouped);
-      loadSearchFilters();
-      loadAllCourses();
-      updateCourseOptions();
-      displayStudentList(groupedStudents);
       if (typeof loadCategories === 'function') {
         loadCategories('teacherCategoryId');
       } else {
@@ -981,18 +975,6 @@
         guardianRegisterError.style.display = 'block';
       }
     });
-    document.querySelectorAll('#guardianModal .togglePassword').forEach(button => {
-      button.addEventListener('click', () => {
-        const input = button.previousElementSibling;
-        if (input.type === "password") {
-          input.type = "text";
-          button.textContent = "Gizle";
-        } else {
-          input.type = "password";
-          button.textContent = "Göster";
-        }
-      });
-    });
 
     // Öğretmen Modal açma/kapama ve JS
     let teacherIti;
@@ -1081,18 +1063,6 @@
         teacherRegisterError.textContent = 'Bağlantı hatası. Lütfen daha sonra tekrar deneyin.';
         teacherRegisterError.style.display = 'block';
       }
-    });
-    document.querySelectorAll('#teacherModal .togglePassword').forEach(button => {
-      button.addEventListener('click', () => {
-        const input = button.previousElementSibling;
-        if (input.type === "password") {
-          input.type = "text";
-          button.textContent = "Gizle";
-        } else {
-          input.type = "password";
-          button.textContent = "Göster";
-        }
-      });
     });
 
     async function loadStudentModalCategoriesAndLevels() {

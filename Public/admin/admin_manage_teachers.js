@@ -16,17 +16,29 @@ window.toggleTeacherActivePassive = async function toggleTeacherActivePassive() 
   }
 };
 
+// Add a global showError function if not defined
+if (typeof window.showError !== 'function') {
+  window.showError = function(message) {
+    alert(message);
+  };
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   const toggleBtn = document.getElementById('toggleTeacherActivePassiveBtn');
   if (toggleBtn) {
     toggleBtn.addEventListener('click', window.toggleTeacherActivePassive);
   }
-  loadTeachers();
-  loadCourses();
-  loadAssignments();
-  setupEventListeners();
-  loadCategories();
-  renderAssignmentsTable();
+  // loadTeachers();
+  // loadCourses();
+  // loadAssignments(); // <-- Remove or comment out this line (undefined)
+  // setupEventListeners();
+  // loadCategories();
+  // renderAssignmentsTable();
+  if (typeof loadTeachers === 'function') loadTeachers();
+  if (typeof loadCourses === 'function') loadCourses();
+  if (typeof setupEventListeners === 'function') setupEventListeners();
+  if (typeof loadCategories === 'function') loadCategories();
+  if (typeof renderAssignmentsTable === 'function') renderAssignmentsTable();
 });
 
 // --- PASSIVE TEACHERS LOGIC ---
@@ -503,6 +515,20 @@ window.initTeacherModal = function initTeacherModal() {
             utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.2/build/js/utils.js'
           });
         }
+        // Şifre göster/gizle butonlarını her açılışta tekrar bağla
+        document.querySelectorAll('#teacherModal .togglePassword').forEach(button => {
+          button.onclick = function() {
+            const input = button.parentElement.querySelector('input[type="password"], input[type="text"]');
+            if (!input) return;
+            if (input.type === "password") {
+              input.type = "text";
+              button.textContent = "Gizle";
+            } else {
+              input.type = "password";
+              button.textContent = "Göster";
+            }
+          };
+        });
       }, 0);
     });
     closeTeacherModalBtn.addEventListener('click', () => {
@@ -566,18 +592,6 @@ window.initTeacherModal = function initTeacherModal() {
         teacherRegisterError.style.display = 'block';
       }
     });
-    document.querySelectorAll('#teacherModal .togglePassword').forEach(button => {
-      button.addEventListener('click', () => {
-        const input = button.previousElementSibling;
-        if (input.type === "password") {
-          input.type = "text";
-          button.textContent = "Gizle";
-        } else {
-          input.type = "password";
-          button.textContent = "Göster";
-        }
-      });
-    });
   }
 }
 
@@ -592,14 +606,15 @@ window.loadCategories = async function loadCategories() {
     if (!response.ok) throw new Error('Kategoriler alınamadı');
     const data = await response.json();
     const categorySelect = document.getElementById('teacherCategoryFilter');
-    // Remove all except "Tümü"
-    categorySelect.innerHTML = '<option value="">Tümü</option>';
-    data.categories.forEach(cat => {
-      const option = document.createElement('option');
-      option.value = cat.Category_ID;
-      option.textContent = cat.Category_Name;
-      categorySelect.appendChild(option);
-    });
+    if (categorySelect) {
+      categorySelect.innerHTML = '<option value="">Tümü</option>';
+      data.categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.Category_ID;
+        option.textContent = cat.Category_Name;
+        categorySelect.appendChild(option);
+      });
+    }
   } catch (error) {
     showError('Kategoriler yüklenirken hata oluştu: ' + error.message);
   }
@@ -623,8 +638,11 @@ window.loadCategories = async function loadCategories() {
     // Populate teacher dropdown based on selected category and experience
     function populateTeacherDropdown() {
       const teacherSelect = document.getElementById('teacherId');
-      const categoryId = document.getElementById('teacherCategoryFilter').value;
-      const experience = document.getElementById('teacherExperienceFilter').value;
+      if (!teacherSelect) return;
+      const categoryIdElem = document.getElementById('teacherCategoryFilter');
+      const experienceElem = document.getElementById('teacherExperienceFilter');
+      const categoryId = categoryIdElem ? categoryIdElem.value : '';
+      const experience = experienceElem ? experienceElem.value : '';
       teacherSelect.innerHTML = '<option value="">Öğretmen seçiniz</option>';
       let filtered = window.allAssignmentTeachers || [];
       if (categoryId) {
@@ -642,8 +660,14 @@ window.loadCategories = async function loadCategories() {
     }
 
     // Add event listeners for filtering
-    document.getElementById('teacherCategoryFilter').addEventListener('change', populateTeacherDropdown);
-    document.getElementById('teacherExperienceFilter').addEventListener('change', populateTeacherDropdown);
+    const teacherCategoryFilter = document.getElementById('teacherCategoryFilter');
+    if (teacherCategoryFilter) {
+      teacherCategoryFilter.addEventListener('change', populateTeacherDropdown);
+    }
+    const teacherExperienceFilter = document.getElementById('teacherExperienceFilter');
+    if (teacherExperienceFilter) {
+      teacherExperienceFilter.addEventListener('change', populateTeacherDropdown);
+    }
 
     // Load courses for dropdown
     async function loadCourses() {
@@ -652,17 +676,20 @@ window.loadCategories = async function loadCategories() {
         if (!response.ok) throw new Error('Kurslar alınamadı');
         
         const data = await response.json();
-        courses = data.courses;
+        window.courses = data.courses;
         
         const courseSelect = document.getElementById('courseId');
         const filterCourse = document.getElementById('filterCourse');
         
-        courses.forEach(course => {
+        if (courseSelect) courseSelect.innerHTML = '';
+        if (filterCourse) filterCourse.innerHTML = '';
+        
+        data.courses.forEach(course => {
           const option = document.createElement('option');
           option.value = course.Course_ID;
           option.textContent = course.Course_Name;
-          courseSelect.appendChild(option.cloneNode(true));
-          filterCourse.appendChild(option);
+          if (courseSelect) courseSelect.appendChild(option.cloneNode(true));
+          if (filterCourse) filterCourse.appendChild(option);
         });
       } catch (error) {
         showError('Kurslar yüklenirken hata oluştu: ' + error.message);
@@ -671,6 +698,7 @@ window.loadCategories = async function loadCategories() {
   // Render assignments table
   function renderAssignmentsTable() {
     const tbody = document.getElementById('assignmentsTableBody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     if (!Array.isArray(assignments) || assignments.length === 0) {
