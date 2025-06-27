@@ -610,25 +610,41 @@ window.loadCategories = async function loadCategories() {
       try {
         const response = await fetch('/api/admin/teachers', { credentials: 'include' });
         if (!response.ok) throw new Error('Öğretmenler alınamadı');
-        
         const data = await response.json();
-        teachers = data.teachers;
-        window.populateExperienceDropdown(teachers, 'teacherExperienceFilter');
-        
-        const teacherSelect = document.getElementById('teacherId');
-        const filterTeacher = document.getElementById('filterTeacher');
-        
-        teachers.forEach(teacher => {
-          const option = document.createElement('option');
-          option.value = teacher.Teacher_ID;
-          option.textContent = `${teacher.First_Name} ${teacher.Last_Name}`;
-          teacherSelect.appendChild(option.cloneNode(true));
-          filterTeacher.appendChild(option);
-        });
+        window.allAssignmentTeachers = data.teachers; // Store globally
+        window.populateExperienceDropdown(window.allAssignmentTeachers, 'teacherExperienceFilter');
+        populateTeacherDropdown(); // Populate initially
+        // Optionally, also populate filterTeacher if needed
       } catch (error) {
         showError('Öğretmenler yüklenirken hata oluştu: ' + error.message);
       }
     }
+
+    // Populate teacher dropdown based on selected category and experience
+    function populateTeacherDropdown() {
+      const teacherSelect = document.getElementById('teacherId');
+      const categoryId = document.getElementById('teacherCategoryFilter').value;
+      const experience = document.getElementById('teacherExperienceFilter').value;
+      teacherSelect.innerHTML = '<option value="">Öğretmen seçiniz</option>';
+      let filtered = window.allAssignmentTeachers || [];
+      if (categoryId) {
+        filtered = filtered.filter(t => String(t.Category_ID) === String(categoryId));
+      }
+      if (experience) {
+        filtered = filtered.filter(t => t.Experience === experience);
+      }
+      filtered.forEach(teacher => {
+        const option = document.createElement('option');
+        option.value = teacher.Teacher_ID;
+        option.textContent = `${teacher.First_Name} ${teacher.Last_Name}`;
+        teacherSelect.appendChild(option);
+      });
+    }
+
+    // Add event listeners for filtering
+    document.getElementById('teacherCategoryFilter').addEventListener('change', populateTeacherDropdown);
+    document.getElementById('teacherExperienceFilter').addEventListener('change', populateTeacherDropdown);
+
     // Load courses for dropdown
     async function loadCourses() {
       try {
