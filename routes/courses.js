@@ -88,4 +88,23 @@ export const getCourses = async (req, res) => {
     console.error('Course filter error:', err);
     res.status(500).json({ error: 'Kurslar alınamadı' });
   }
+};
+
+export const addCourse = async (req, res) => {
+  const { name, category, status } = req.body;
+  if (!name || !category || !status) {
+    return res.status(400).json({ error: 'Tüm alanlar zorunludur.' });
+  }
+  try {
+    const result = await pool.query(
+      `INSERT INTO "Courses" ("Course_Name", "Category_ID", "Status")
+       VALUES ($1, $2, $3)
+       RETURNING "Course_ID", "Course_Name", "Category_ID", "Status"`,
+      [name, category, status]
+    );
+    res.status(201).json({ course: result.rows[0] });
+  } catch (err) {
+    console.error('Kurs ekleme hatası:', err);
+    res.status(500).json({ error: 'Kurs eklenemedi.' });
+  }
 }; 

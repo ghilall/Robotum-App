@@ -285,10 +285,31 @@
         </div>
         <div class="section-content">
           <div class="action-buttons">
-            <a href="add_course.html" class="action-btn">
+            <button class="action-btn" id="openCourseModalBtn" type="button">
               <i>➕</i>
               <span>Kurs Ekle</span>
-            </a>
+            </button>
+            <button class="action-btn secondary" id="toggleCourseActivePassiveBtn" type="button">
+              <i>🔄</i>
+              <span id="toggleCourseActivePassiveBtnText">Pasif Kursları Göster</span>
+            </button>
+          </div>
+          <div class="search-container">
+            <div class="search-input-group">
+              <label for="courseNameSearch">Kurs Adı</label>
+              <input type="text" id="courseNameSearch" class="search-input-field" placeholder="Kurs adı ara...">
+            </div>
+            <div class="search-buttons">
+              <button class="search-btn" id="searchCourseBtn">
+                🔍 Ara
+              </button>
+              <button class="clear-btn" id="clearCourseSearchBtn">
+                🗑️ Temizle
+              </button>
+            </div>
+          </div>
+          <div id="courseListContainer">
+            <div class="loading">Kurs listesi yükleniyor...</div>
           </div>
         </div>
       </div>
@@ -664,6 +685,29 @@
           </div>
         </div>
         <button type="submit">Kaydet</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Course Modal -->
+  <div id="courseModal" class="modal" style="display:none;">
+    <div class="registration-container" style="position:relative; margin:auto;">
+      <button id="closeCourseModalBtn" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+      <h1>Kurs Ekle</h1>
+      <form id="addCourseForm">
+        <label for="courseName">Kurs Adı</label>
+        <input type="text" id="courseName" name="courseName" required />
+        <label for="courseCategory">Kategori</label>
+        <select id="courseCategory" name="courseCategory" required>
+          <option value="">Kategori seçiniz</option>
+          <!-- Options will be populated dynamically -->
+        </select>
+        <label for="courseStatus">Durum</label>
+        <select id="courseStatus" name="courseStatus" required>
+          <option value="Aktif">Aktif</option>
+          <option value="Pasif">Pasif</option>
+        </select>
+        <button type="submit">Kaydı Tamamla</button>
       </form>
     </div>
   </div>
