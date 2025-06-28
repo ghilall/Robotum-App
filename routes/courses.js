@@ -63,7 +63,7 @@ export const getCourseLevels = async (req, res) => {
 };
 
 export const getCourses = async (req, res) => {
-  const { categoryId, level } = req.query;
+  const { categoryId, level, difficulty } = req.query;
   const values = [];
   let whereClause = '';
 
@@ -75,9 +75,13 @@ export const getCourses = async (req, res) => {
     values.push(level);
     whereClause += ` AND "Level" = $${values.length}`;
   }
+  if (difficulty) {
+    values.push(difficulty);
+    whereClause += ` AND "Difficulty" = $${values.length}`;
+  }
   try {
     const result = await pool.query(`
-      SELECT "Course_ID", "Course_Name", "Level", "Category_ID", "Status"
+      SELECT "Course_ID", "Course_Name", "Level", "Category_ID", "Status", "Difficulty"
       FROM "Courses"
       WHERE 1=1 ${whereClause}
       ORDER BY "Course_Name"
@@ -91,21 +95,94 @@ export const getCourses = async (req, res) => {
 };
 
 export const addCourse = async (req, res) => {
-  const { name, category, level, status } = req.body;
-  if (!name || !category || !level || !status) {
-    return res.status(400).json({ error: 'Kurs adı, kategori, seviye ve durum zorunludur.' });
+  const { name, category, level, difficulty, status } = req.body;
+  if (!name || !category || !level || !difficulty || !status) {
+    return res.status(400).json({ error: 'Kurs adı, kategori, seviye, zorluk ve durum zorunludur.' });
   }
   try {
     const result = await pool.query(
-      `INSERT INTO "Courses" ("Course_Name", "Category_ID", "Level", "Status")
-       VALUES ($1, $2, $3, $4)
-       RETURNING "Course_ID", "Course_Name", "Category_ID", "Level", "Status"`,
-      [name, category, level, status]
+      `INSERT INTO "Courses" ("Course_Name", "Category_ID", "Level", "Difficulty", "Status")
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING "Course_ID", "Course_Name", "Category_ID", "Level", "Difficulty", "Status"`,
+      [name, category, level, difficulty, status]
     );
     res.status(201).json({ course: result.rows[0] });
   } catch (err) {
     console.error('Kurs ekleme hatası:', err);
     res.status(500).json({ error: 'Kurs eklenemedi.' });
+  }
+};
+
+export const updateCourse = async (req, res) => {
+  const { courseId } = req.params;
+  const { name, category, level, difficulty, status } = req.body;
+  
+  if (!courseId) {
+    return res.status(400).json({ error: 'Kurs ID gerekli.' });
+  }
+  
+  if (!name || !category || !level || !difficulty || !status) {
+    return res.status(400).json({ error: 'Kurs adı, kategori, seviye, zorluk ve durum zorunludur.' });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE "Courses" 
+       SET "Course_Name" = $1, "Category_ID" = $2, "Level" = $3, "Difficulty" = $4, "Status" = $5
+       WHERE "Course_ID" = $6
+       RETURNING "Course_ID", "Course_Name", "Category_ID", "Level", "Difficulty", "Status"`,
+      [name, category, level, difficulty, status, courseId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Kurs bulunamadı.' });
+    }
+
+    res.json({ 
+      course: result.rows[0],
+      message: 'Kurs başarıyla güncellendi.'
+    });
+  } catch (err) {
+    console.error('Kurs güncelleme hatası:', err);
+    res.status(500).json({ error: 'Kurs güncellenemedi.' });
+  }
+};
+
+export const deleteCourse = async (req, res) => {
+  const { courseId } = req.params;
+  
+  if (!courseId) {
+    return res.status(400).json({ error: 'Kurs ID gerekli.' });
+  }
+
+  try {
+    // First check if the course exists and is passive
+    const checkResult = await pool.query(
+      `SELECT "Course_ID", "Course_Name", "Status" FROM "Courses" WHERE "Course_ID" = $1`,
+      [courseId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Kurs bulunamadı.' });
+    }
+
+    const course = checkResult.rows[0];
+    if (course.Status !== 'Pasif') {
+      return res.status(400).json({ error: 'Sadece pasif kurslar kalıcı olarak silinebilir.' });
+    }
+
+    // Delete the course
+    const result = await pool.query(
+      `DELETE FROM "Courses" WHERE "Course_ID" = $1 RETURNING "Course_ID", "Course_Name"`,
+      [courseId]
+    );
+
+    res.json({ 
+      message: `"${course.Course_Name}" kursu kalıcı olarak silindi.`
+    });
+  } catch (err) {
+    console.error('Kurs silme hatası:', err);
+    res.status(500).json({ error: 'Kurs silinemedi.' });
   }
 };
 
