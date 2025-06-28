@@ -56,7 +56,7 @@ async function loadDashboardStats() {
     }
   }
     // Section navigation
-    function showSection(sectionName) {
+    function showSection(sectionName, event) {
     // Hide all sections
     const sections = ['dashboard', 'guardians', 'students', 'teachers', 'courses'];
         sections.forEach(section => {
@@ -70,7 +70,10 @@ async function loadDashboardStats() {
     document.querySelectorAll('.menu-item').forEach(item => {
         item.classList.remove('active');
     });
-    event.target.closest('.menu-item').classList.add('active');
+    if (event && event.target && typeof event.target.closest === 'function') {
+        const menuItem = event.target.closest('.menu-item');
+        if (menuItem) menuItem.classList.add('active');
+    }
   
     // Load dashboard stats if dashboard section is selected
     if (sectionName === 'dashboard') {

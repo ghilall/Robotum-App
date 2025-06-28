@@ -374,6 +374,21 @@ window.initGuardianModal = function initGuardianModal() {
             utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.2/build/js/utils.js'
           });
         }
+        // Şifre göster/gizle butonlarını her açılışta tekrar bağla
+        document.querySelectorAll('#guardianModal .togglePassword').forEach(button => {
+          button.onclick = function(event) {
+            event.preventDefault();
+            const input = button.parentElement.querySelector('input[type="password"], input[type="text"]');
+            if (!input) return;
+            if (input.type === "password") {
+              input.type = "text";
+              button.textContent = "Gizle";
+            } else {
+              input.type = "password";
+              button.textContent = "Göster";
+            }
+          };
+        });
       }, 0);
     });
     closeGuardianModalBtn.addEventListener('click', () => {
@@ -425,18 +440,6 @@ window.initGuardianModal = function initGuardianModal() {
         guardianRegisterError.textContent = 'Bağlantı hatası. Lütfen daha sonra tekrar deneyin.';
         guardianRegisterError.style.display = 'block';
       }
-    });
-    document.querySelectorAll('#guardianModal .togglePassword').forEach(button => {
-      button.addEventListener('click', () => {
-        const input = button.previousElementSibling;
-        if (input.type === "password") {
-          input.type = "text";
-          button.textContent = "Gizle";
-        } else {
-          input.type = "password";
-          button.textContent = "Göster";
-        }
-      });
     });
   }
 }
