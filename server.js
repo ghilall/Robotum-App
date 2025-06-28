@@ -57,5 +57,5 @@ app.get('/test_passive_users.html', (req, res) => {
 
 // Start the server
 app.listen(port, () => {
-  console.log(`Robotum App is running on port ${port}`);
+  console.log(`Robotum App is running on port http://localhost:${port}`);
 });

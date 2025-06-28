@@ -415,7 +415,6 @@
       loadCourses();
       loadAssignments();
       setupEventListeners();
-      loadCategories();
       renderAssignmentsTable();
     });
     // Load assignments
@@ -467,6 +466,7 @@
       document.getElementById('filterStartDate').addEventListener('change', loadAssignments);
       document.getElementById('filterEndDate').addEventListener('change', loadAssignments);
       document.getElementById('teacherExperienceFilter').addEventListener('change', filterTeacherDropdown);
+      document.getElementById('teacherCategoryFilter').addEventListener('change', filterTeacherDropdown);
     }
 
     // Handle form submission
@@ -637,7 +637,7 @@
       teacherSelect.innerHTML = '<option value="">Öğretmen seçiniz</option>';
       teachers
         .filter(t =>
-          (!category || String(t.Category_ID) === category) &&
+          (!category || t.CategoryName === category) &&
           (!experience || t.Experience === experience)
         )
         .sort((a, b) => {
@@ -748,25 +748,6 @@
         `;
         tbody.appendChild(row);
       });
-    }
-
-    // Add this function to load categories from the database
-    async function loadCategories() {
-      try {
-        const response = await fetch('/api/categories', { credentials: 'include' });
-        if (!response.ok) throw new Error('Kategoriler alınamadı');
-        const data = await response.json();
-        const categorySelect = document.getElementById('teacherCategoryFilter');
-        categorySelect.innerHTML = '<option value="">Tümü</option>';
-        data.categories.forEach(cat => {
-          const option = document.createElement('option');
-          option.value = cat.Category_ID;
-          option.textContent = cat.Category_Name;
-          categorySelect.appendChild(option);
-        });
-      } catch (error) {
-        showError('Kategoriler yüklenirken hata oluştu: ' + error.message);
-      }
     }
   </script>
 </body>
