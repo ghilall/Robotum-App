@@ -12,17 +12,20 @@ const result = await pool.query('SELECT NOW()');
 console.log(result.rows);
 
 //Sets up the Express app and enables parsing of JSON and form data
-const port = 3000;
+const port = process.env.PORT || 3000;
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Middleware to parse JSON and URL-encoded data (Session Setup)
 app.use(session({
-  secret: '2218',
+  secret: process.env.SESSION_SECRET || '2218',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false }
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 
 //Static Files
@@ -54,5 +57,5 @@ app.get('/test_passive_users.html', (req, res) => {
 
 // Start the server
 app.listen(port, () => {
-  console.log(`Robotum App is running on http://localhost:${port}`);
+  console.log(`Robotum App is running on port ${port}`);
 });

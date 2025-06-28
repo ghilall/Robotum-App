@@ -152,6 +152,9 @@ window.searchStudents = function searchStudents() {
   const courseSearch = document.getElementById('courseSearch').value;
   const daySearch = document.getElementById('daySearch').value;
   const nameSearch = document.getElementById('nameSearch').value.toLocaleLowerCase('tr-TR');
+  
+  console.log('Search parameters:', { categorySearch, courseSearch, daySearch, nameSearch });
+  
   if (!window.allStudentsData) {
     alert('Öğrenci verisi henüz yüklenmedi.');
     return;
@@ -169,19 +172,33 @@ window.searchStudents = function searchStudents() {
     for (const studentId in students) {
       const student = students[studentId];
       let shouldInclude = true;
-      if (courseSearch) {
+      
+      // Category filter
+      if (categorySearch && shouldInclude) {
+        console.log('Checking category:', { studentCategoryId: student.categoryId, searchCategoryId: categorySearch });
+        if (student.categoryId != categorySearch) {
+          shouldInclude = false;
+        }
+      }
+      
+      // Course filter
+      if (courseSearch && shouldInclude) {
         const courseSelect = document.getElementById('courseSearch');
         const selectedCourseName = courseSelect.options[courseSelect.selectedIndex].text;
         if (courseName !== selectedCourseName) {
           shouldInclude = false;
         }
       }
+      
+      // Name filter
       if (nameSearch && shouldInclude) {
         const fullName = `${student.firstName} ${student.lastName}`.toLocaleLowerCase('tr-TR');
         if (!fullName.includes(nameSearch)) {
           shouldInclude = false;
         }
       }
+      
+      // Day filter
       if (shouldInclude && student.program && student.program.length > 0) {
         const matchingPrograms = student.program.filter(program => {
           let matches = true;
@@ -196,6 +213,7 @@ window.searchStudents = function searchStudents() {
       } else if (daySearch) {
         shouldInclude = false;
       }
+      
       if (shouldInclude) {
         filteredStudents[studentId] = student;
         totalResults++;
@@ -205,12 +223,14 @@ window.searchStudents = function searchStudents() {
       filteredData[courseName] = filteredStudents;
     }
   }
+  console.log('Search results:', { totalResults, filteredData });
   window.displaySearchResults(totalResults, categorySearch, '', courseSearch, '', daySearch);
   window.displayStudentList(filteredData);
 };
 
 window.displaySearchResults = function displaySearchResults(totalResults, categorySearch, levelSearch, courseSearch, hoursSearch, daySearch) {
   const searchResultsDiv = document.getElementById('searchResults');
+  const nameSearch = document.getElementById('nameSearch').value;
   let searchCriteria = [];
   if (categorySearch) {
     const categorySelect = document.getElementById('categorySearch');
@@ -267,9 +287,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.loadSearchFilters = async function loadSearchFilters() {
   try {
+    console.log('Loading search filters...');
     const catResponse = await fetch('/api/categories', { credentials: 'include' });
     const catData = await catResponse.json();
+    console.log('Categories loaded:', catData);
     const categorySelect = document.getElementById('categorySearch');
+    
+    // Clear existing options first to prevent duplicates
+    categorySelect.innerHTML = '<option value="">Tüm kategoriler</option>';
+    
     catData.categories.forEach(cat => {
       const option = document.createElement('option');
       option.value = cat.Category_ID;
@@ -277,7 +303,13 @@ window.loadSearchFilters = async function loadSearchFilters() {
       categorySelect.appendChild(option);
     });
     await window.loadAllCourses();
-    document.getElementById('categorySearch').addEventListener('change', window.updateCourseOptions);
+    
+    // Remove existing event listener before adding new one to prevent duplicates
+    const categorySearchElement = document.getElementById('categorySearch');
+    categorySearchElement.removeEventListener('change', window.updateCourseOptions);
+    categorySearchElement.addEventListener('change', window.updateCourseOptions);
+    
+    console.log('Search filters loaded successfully');
   } catch (error) {
     console.error('Error loading search filters:', error);
   }
