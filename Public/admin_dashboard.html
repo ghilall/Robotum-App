@@ -299,6 +299,17 @@
               <label for="courseNameSearch">Kurs Adı</label>
               <input type="text" id="courseNameSearch" class="search-input-field" placeholder="Kurs adı ara...">
             </div>
+            <div class="search-input-group">
+              <label for="courseLevelSearch">Seviye</label>
+              <select id="courseLevelSearch" class="search-input-field">
+                <option value="">Tüm seviyeler</option>
+                <option value="Okul Öncesi">Okul Öncesi</option>
+                <option value="İlkokul">İlkokul</option>
+                <option value="Ortaokul">Ortaokul</option>
+                <option value="Lise">Lise</option>
+                <option value="Yetişkin">Yetişkin</option>
+              </select>
+            </div>
             <div class="search-buttons">
               <button class="search-btn" id="searchCourseBtn">
                 🔍 Ara
@@ -701,6 +712,15 @@
         <select id="courseCategory" name="courseCategory" required>
           <option value="">Kategori seçiniz</option>
           <!-- Options will be populated dynamically -->
+        </select>
+        <label for="courseLevel">Seviye</label>
+        <select id="courseLevel" name="courseLevel" required>
+          <option value="">Seviye seçiniz</option>
+          <option value="Okul Öncesi">Okul Öncesi</option>
+          <option value="İlkokul">İlkokul</option>
+          <option value="Ortaokul">Ortaokul</option>
+          <option value="Lise">Lise</option>
+          <option value="Yetişkin">Yetişkin</option>
         </select>
         <label for="courseStatus">Durum</label>
         <select id="courseStatus" name="courseStatus" required>

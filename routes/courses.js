@@ -77,7 +77,7 @@ export const getCourses = async (req, res) => {
   }
   try {
     const result = await pool.query(`
-      SELECT "Course_ID", "Course_Name", "Level", "Category_ID"
+      SELECT "Course_ID", "Course_Name", "Level", "Category_ID", "Status"
       FROM "Courses"
       WHERE 1=1 ${whereClause}
       ORDER BY "Course_Name"
@@ -91,20 +91,57 @@ export const getCourses = async (req, res) => {
 };
 
 export const addCourse = async (req, res) => {
-  const { name, category, status } = req.body;
-  if (!name || !category || !status) {
-    return res.status(400).json({ error: 'Tüm alanlar zorunludur.' });
+  const { name, category, level, status } = req.body;
+  if (!name || !category || !level || !status) {
+    return res.status(400).json({ error: 'Kurs adı, kategori, seviye ve durum zorunludur.' });
   }
   try {
     const result = await pool.query(
-      `INSERT INTO "Courses" ("Course_Name", "Category_ID", "Status")
-       VALUES ($1, $2, $3)
-       RETURNING "Course_ID", "Course_Name", "Category_ID", "Status"`,
-      [name, category, status]
+      `INSERT INTO "Courses" ("Course_Name", "Category_ID", "Level", "Status")
+       VALUES ($1, $2, $3, $4)
+       RETURNING "Course_ID", "Course_Name", "Category_ID", "Level", "Status"`,
+      [name, category, level, status]
     );
     res.status(201).json({ course: result.rows[0] });
   } catch (err) {
     console.error('Kurs ekleme hatası:', err);
     res.status(500).json({ error: 'Kurs eklenemedi.' });
+  }
+};
+
+export const toggleCourseStatus = async (req, res) => {
+  const { courseId } = req.params;
+  
+  if (!courseId) {
+    return res.status(400).json({ error: 'Kurs ID gerekli.' });
+  }
+
+  try {
+    // First get the current status
+    const currentStatusResult = await pool.query(
+      `SELECT "Status" FROM "Courses" WHERE "Course_ID" = $1`,
+      [courseId]
+    );
+
+    if (currentStatusResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Kurs bulunamadı.' });
+    }
+
+    const currentStatus = currentStatusResult.rows[0].Status;
+    const newStatus = currentStatus === 'Aktif' ? 'Pasif' : 'Aktif';
+
+    // Update the status
+    const result = await pool.query(
+      `UPDATE "Courses" SET "Status" = $1 WHERE "Course_ID" = $2 RETURNING "Course_ID", "Course_Name", "Status"`,
+      [newStatus, courseId]
+    );
+
+    res.json({ 
+      course: result.rows[0],
+      message: `Kurs ${newStatus === 'Aktif' ? 'aktifleştirildi' : 'pasif hale getirildi'}.`
+    });
+  } catch (err) {
+    console.error('Kurs durumu değiştirme hatası:', err);
+    res.status(500).json({ error: 'Kurs durumu değiştirilemedi.' });
   }
 }; 

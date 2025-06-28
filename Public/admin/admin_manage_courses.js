@@ -46,10 +46,14 @@ async function fetchCourses() {
 function renderCourseList() {
   const container = document.getElementById('courseListContainer');
   const searchTerm = (document.getElementById('courseNameSearch').value || '').toLowerCase();
+  const levelFilter = document.getElementById('courseLevelSearch').value;
+  
   const filtered = allCourses.filter(course =>
     (showActiveCourses ? course.status.toLowerCase() === 'aktif' : course.status.toLowerCase() === 'pasif') &&
-    course.name.toLowerCase().includes(searchTerm)
+    course.name.toLowerCase().includes(searchTerm) &&
+    (!levelFilter || course.level === levelFilter)
   );
+  
   if (filtered.length === 0) {
     container.innerHTML = '<div class="no-students">Kurs bulunamadı.</div>';
     return;
@@ -57,14 +61,24 @@ function renderCourseList() {
   let html = '';
   filtered.forEach(course => {
     const categoryName = categoryMap[course.categoryId] || 'Kategori Yok';
+    const levelText = course.level ? `Seviye: ${course.level}` : '';
+    const statusClass = course.status === 'Aktif' ? 'status-active' : 'status-passive';
+    const toggleText = course.status === 'Aktif' ? 'Pasife Al' : 'Aktifleştir';
+    const toggleClass = course.status === 'Aktif' ? 'toggle-passive' : 'toggle-active';
+    
     html += `
       <div class="student-item">
         <div>
           <div class="student-name">${course.name}</div>
           <div class="student-details">Kategori: ${categoryName}</div>
-          <div class="student-status">${course.status === "Aktif" ? "Aktif" : "Pasif"}</div>
+          ${levelText ? `<div class="student-details">${levelText}</div>` : ''}
+          <div class="student-status ${statusClass}">${course.status}</div>
         </div>
-        <!-- You can add edit/delete buttons here if needed -->
+        <div class="student-actions">
+          <button class="toggle-status-btn ${toggleClass}" onclick="toggleCourseStatus(${course.id})">
+            ${toggleText}
+          </button>
+        </div>
       </div>
     `;
   });
@@ -76,6 +90,31 @@ async function refreshCourseList() {
   await fetchCategories();
   await fetchCourses();
   renderCourseList();
+}
+
+// Toggle course status (activate/deactivate)
+async function toggleCourseStatus(courseId) {
+  try {
+    const response = await fetch(`/api/courses/${courseId}/toggle-status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Kurs durumu değiştirilemedi');
+    }
+    
+    const result = await response.json();
+    alert(result.message);
+    
+    // Refresh the course list to show updated status
+    await refreshCourseList();
+  } catch (err) {
+    alert('Hata: ' + err.message);
+    console.error('Kurs durumu değiştirme hatası:', err);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -129,14 +168,21 @@ document.addEventListener('DOMContentLoaded', function() {
     e.preventDefault();
     const name = document.getElementById('courseName').value;
     const category = document.getElementById('courseCategory').value;
+    const level = document.getElementById('courseLevel').value;
     const status = document.getElementById('courseStatus').value;
+    
+    if (!name || !category || !level || !status) {
+      alert('Tüm alanlar zorunludur.');
+      return;
+    }
+    
     // Here you would send a POST request to your backend to add the course
     try {
       const response = await fetch('/api/courses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ name, category, status })
+        body: JSON.stringify({ name, category, level, status })
       });
       if (!response.ok) throw new Error('Kurs eklenemedi');
       courseModal.style.display = 'none';
