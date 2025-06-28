@@ -326,9 +326,6 @@
               <button class="clear-btn" id="clearCourseSearchBtn">
                 🗑️ Temizle
               </button>
-              <button class="action-btn secondary" id="viewCourseProgramsBtn" style="margin-left: 10px;">
-                📅 Programları Görüntüle
-              </button>
             </div>
           </div>
           <div id="courseListContainer">
@@ -797,17 +794,26 @@
       <h2 id="courseProgramsTitle" style="margin-bottom:20px; color:#333;">Kurs Programları</h2>
       
       <div class="programs-filter" style="margin-bottom:20px;">
-        <label for="programDayFilter" style="display:block; margin-bottom:5px; font-weight:bold;">Gün Filtresi:</label>
-        <select id="programDayFilter" style="padding:8px; border:1px solid #ddd; border-radius:4px; width:200px;">
-          <option value="">Tüm günler</option>
-          <option value="Pazartesi">Pazartesi</option>
-          <option value="Salı">Salı</option>
-          <option value="Çarşamba">Çarşamba</option>
-          <option value="Perşembe">Perşembe</option>
-          <option value="Cuma">Cuma</option>
-          <option value="Cumartesi">Cumartesi</option>
-          <option value="Pazar">Pazar</option>
-        </select>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 15px;">
+          <div style="flex: 1;">
+            <label for="programDayFilter" style="display:block; margin-bottom:5px; font-weight:bold;">Gün Filtresi:</label>
+            <select id="programDayFilter" style="padding:8px; border:1px solid #ddd; border-radius:4px; width:200px;">
+              <option value="">Tüm günler</option>
+              <option value="Pazartesi">Pazartesi</option>
+              <option value="Salı">Salı</option>
+              <option value="Çarşamba">Çarşamba</option>
+              <option value="Perşembe">Perşembe</option>
+              <option value="Cuma">Cuma</option>
+              <option value="Cumartesi">Cumartesi</option>
+              <option value="Pazar">Pazar</option>
+            </select>
+          </div>
+          <div style="flex-shrink: 0;">
+            <button id="addProgramBtn" style="padding:8px 16px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">
+              ➕ Program Ekle
+            </button>
+          </div>
+        </div>
       </div>
       
       <div id="programsList" style="margin-top:20px;">
@@ -1245,7 +1251,6 @@
     const courseProgramsModal = document.getElementById('courseProgramsModal');
     const closeCourseProgramsModalBtn = document.getElementById('closeCourseProgramsModalBtn');
     const closeCourseProgramsBtn = document.getElementById('closeCourseProgramsBtn');
-    const viewCourseProgramsBtn = document.getElementById('viewCourseProgramsBtn');
     const courseNameSearch = document.getElementById('courseNameSearch');
     const courseLevelSearch = document.getElementById('courseLevelSearch');
     const courseDifficultySearch = document.getElementById('courseDifficultySearch');
@@ -1253,9 +1258,14 @@
     const programsList = document.getElementById('programsList');
     const courseProgramsTitle = document.getElementById('courseProgramsTitle');
 
+    // Store current course information for filtering
+    let currentCourseInfo = null;
+
     // Close modal functions
     function closeCourseProgramsModal() {
       courseProgramsModal.style.display = 'none';
+      // Reset current course info when closing
+      currentCourseInfo = null;
     }
 
     if (closeCourseProgramsModalBtn) {
@@ -1273,60 +1283,43 @@
       }
     });
 
-    // View programs button functionality
-    if (viewCourseProgramsBtn) {
-      viewCourseProgramsBtn.addEventListener('click', async () => {
-        const courseName = courseNameSearch.value;
-        const courseLevel = courseLevelSearch.value;
-        const courseDifficulty = courseDifficultySearch.value;
-
-        if (!courseName && !courseLevel && !courseDifficulty) {
-          alert('Lütfen en az bir arama kriteri seçin (Kurs Adı, Seviye veya Zorluk)');
-          return;
-        }
-
-        courseProgramsTitle.textContent = `Programlar - ${courseName || 'Seçili Kriterler'}`;
-        courseProgramsModal.style.display = 'flex';
-        await loadCoursePrograms(courseName, courseLevel, courseDifficulty);
-      });
-    }
-
     // Load course programs
     async function loadCoursePrograms(courseName, courseLevel, courseDifficulty) {
       programsList.innerHTML = '<div class="loading">Programlar yükleniyor...</div>';
       
+      // Store current course info for filtering
+      currentCourseInfo = { courseName, courseLevel, courseDifficulty };
+      
       try {
-        // First, get courses that match the criteria
-        const courseParams = new URLSearchParams();
-        if (courseName) courseParams.append('name', courseName);
-        if (courseLevel) courseParams.append('level', courseLevel);
-        if (courseDifficulty) courseParams.append('difficulty', courseDifficulty);
-        
-        const courseResponse = await fetch(`/api/courses?${courseParams.toString()}`, { credentials: 'include' });
+        // First, get the specific course by exact name match
+        const courseResponse = await fetch('/api/courses', { credentials: 'include' });
         const courseData = await courseResponse.json();
         
-        if (!courseData.courses || courseData.courses.length === 0) {
-          programsList.innerHTML = '<div class="no-programs">Seçili kriterlere uygun kurs bulunamadı.</div>';
+        // Find the exact course by name
+        const exactCourse = courseData.courses.find(course => 
+          course.Course_Name === courseName
+        );
+        
+        if (!exactCourse) {
+          programsList.innerHTML = '<div class="no-programs">Kurs bulunamadı.</div>';
           return;
         }
 
-        // Get programs for all matching courses
+        // Get programs for this specific course only
+        const programResponse = await fetch(`/api/programs/by-course/${exactCourse.Course_ID}`, { credentials: 'include' });
+        const programData = await programResponse.json();
+        
         let allPrograms = [];
-        for (const course of courseData.courses) {
-          const programResponse = await fetch(`/api/programs/by-course/${course.Course_ID}`, { credentials: 'include' });
-          const programData = await programResponse.json();
-          
-          if (programData.programs && programData.programs.length > 0) {
-            allPrograms.push(...programData.programs.map(program => ({
-              ...program,
-              courseName: course.Course_Name,
-              courseLevel: course.Level
-            })));
-          }
+        if (programData.programs && programData.programs.length > 0) {
+          allPrograms = programData.programs.map(program => ({
+            ...program,
+            courseName: exactCourse.Course_Name,
+            courseLevel: exactCourse.Level
+          }));
         }
 
         if (allPrograms.length === 0) {
-          programsList.innerHTML = '<div class="no-programs">Seçili kurslarda program bulunamadı.</div>';
+          programsList.innerHTML = '<div class="no-programs">Bu kurs için program bulunamadı.</div>';
           return;
         }
 
@@ -1408,15 +1401,32 @@
     // Filter programs when day filter changes
     if (programDayFilter) {
       programDayFilter.addEventListener('change', async () => {
-        const courseName = courseNameSearch.value;
-        const courseLevel = courseLevelSearch.value;
-        const courseDifficulty = courseDifficultySearch.value;
-        
-        if (courseName || courseLevel || courseDifficulty) {
-          await loadCoursePrograms(courseName, courseLevel, courseDifficulty);
+        // Use stored current course info instead of search fields
+        if (currentCourseInfo) {
+          await loadCoursePrograms(currentCourseInfo.courseName, currentCourseInfo.courseLevel, currentCourseInfo.courseDifficulty);
         }
       });
     }
+
+    // Add Program button functionality
+    const addProgramBtn = document.getElementById('addProgramBtn');
+    if (addProgramBtn) {
+      addProgramBtn.addEventListener('click', function() {
+        if (currentCourseInfo) {
+          // TODO: Implement program creation functionality
+          alert(`Program ekleme kısmını ekleyeceğim`);
+        } else {
+          alert('Lütfen önce bir kurs seçin.');
+        }
+      });
+    }
+
+    // Function to view programs for a specific course
+    window.viewCoursePrograms = function(courseName, courseLevel, courseDifficulty) {
+      courseProgramsTitle.textContent = `Programlar - ${courseName}`;
+      courseProgramsModal.style.display = 'flex';
+      loadCoursePrograms(courseName, courseLevel, courseDifficulty);
+    };
 
   </script>
 </body>

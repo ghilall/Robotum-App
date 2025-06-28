@@ -233,7 +233,8 @@ window.displayGuardianList = function displayGuardianList(guardians) {
         </div>
         <div class="guardian-actions">
           <button class="edit-btn" onclick="editGuardian(${guardian.Guardian_ID})">✏️ Düzenle</button>
-          <button class="delete-btn" onclick="window.deleteGuardian(${guardian.Guardian_ID}, '${guardian.First_Name} ${guardian.Last_Name}')">⏸️ Pasife Al</button>
+          <button class="delete-btn" onclick="window.deleteGuardian(${guardian.Guardian_ID}, 
+          '${guardian.First_Name} ${guardian.Last_Name}')">⏸️ Pasife Al</button>
         </div>
       </div>
     `;

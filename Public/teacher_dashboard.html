@@ -3,83 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Öğretmen Paneli</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: "Poppins", sans-serif;
-      background-color: #f0f2f5;
-      display: flex;
-      min-height: 100vh;
-    }
-
-    .sidebar {
-      background-color: #e6f7ff;
-      color: #333;
-      width: 280px;
-      padding: 40px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      border-right: 2px solid #b3e0ff;
-    }
-
-    .sidebar h2 {
-      margin-bottom: 20px;
-      color: #007acc;
-    }
-
-    .sidebar p {
-      font-size: 16px;
-      margin-bottom: 10px;
-      word-break: break-word;
-    }
-
-    .main-content {
-      flex: 1;
-      padding: 40px;
-      overflow-y: auto;
-    }
-
-    .dashboard-box {
-      background: white;
-      padding: 30px 40px;
-      border-radius: 10px;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    .dashboard-box h1 {
-      color: #333;
-      margin-bottom: 10px;
-    }
-
-    .dashboard-box p {
-      font-size: 16px;
-      color: #555;
-    }
-
-    #logoutBtn {
-      margin-top: auto;
-      background-color: #e74c3c;
-      border: none;
-      color: white;
-      padding: 12px 25px;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    #logoutBtn:hover {
-      background-color: #c0392b;
-    }
-  </style>
+  <link rel="stylesheet" href="teacher/teacher_dashboard.css"> 
 </head>
 <body>
 
@@ -102,40 +26,7 @@
   </div>
 
   <script>
-    async function loadUser() {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        alert('Lütfen giriş yapınız.');
-        window.location.href = '/';
-        return;
-      }
-
-      const user = JSON.parse(userStr);
-      const email = encodeURIComponent(user.email);
-
-      try {
-        const response = await fetch(`/api/user?email=${email}`);
-        if (!response.ok) throw new Error('Kullanıcı bilgisi alınamadı');
-        const data = await response.json();
-
-        document.getElementById('userName').textContent = data.name;
-        document.getElementById('userEmail').textContent = data.email;
-        document.getElementById('userPhone').textContent = data.phone;
-        document.getElementById('lastLogin').textContent = data.lastLogin
-          ? new Date(data.lastLogin).toLocaleString('tr-TR')
-          : 'Bilinmiyor';
-
-      } catch (error) {
-        alert('Kullanıcı bilgisi yüklenirken hata oluştu.');
-        console.error(error);
-      }
-    }
-
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('user');
-      window.location.href = '/';
-    });
-
+    src="teacher/teacher_dashboard.js"
     loadUser();
   </script>
 </body>

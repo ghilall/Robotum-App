@@ -67,7 +67,7 @@ function renderCourseList() {
     const levelText = course.level ? `Seviye: ${course.level}` : '';
     const difficultyText = course.difficulty ? `Zorluk: ${course.difficulty}` : '';
     const statusClass = course.status === 'Aktif' ? 'status-active' : 'status-passive';
-    const toggleText = course.status === 'Aktif' ? 'Pasif Al' : 'Aktifleştir';
+    const toggleText = course.status === 'Aktif' ? '⏸️ Pasife Al' : '✅ Aktifleştir';
     const toggleClass = course.status === 'Aktif' ? 'toggle-passive' : 'toggle-active';
     
     html += `
@@ -96,6 +96,9 @@ function renderCourseList() {
               ${toggleText}
             </button>` : ''
           }
+          <button class="action-btn secondary" onclick="viewCoursePrograms('${course.name}', '${course.level}', '${course.difficulty}')" style="margin-left: auto;">
+            📅 Programlar
+          </button>
         </div>
       </div>
     `;
