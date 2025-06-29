@@ -1,5 +1,40 @@
 // Guardian Management Functions for Admin Dashboard
 
+// --- TELEFON NUMARASI FORMATLAMA FONKSİYONU ---
+window.formatPhoneNumber = function formatPhoneNumber(phone) {
+  if (!phone) return 'Belirtilmemiş';
+  
+  // Telefon numarasını temizle (sadece rakamları al)
+  const cleaned = phone.replace(/\D/g, '');
+  
+  // Türkiye telefon numarası formatı (10 haneli)
+  if (cleaned.length === 10) {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 8)} ${cleaned.slice(8, 10)}`;
+  }
+  
+  // 11 haneli numara (başında 0 varsa)
+  if (cleaned.length === 11 && cleaned.startsWith('0')) {
+    return `${cleaned.slice(1, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7, 9)} ${cleaned.slice(9, 11)}`;
+  }
+  
+  // 11 haneli numara (başında 5 varsa - cep telefonu)
+  if (cleaned.length === 11 && cleaned.startsWith('5')) {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 8)} ${cleaned.slice(8, 11)}`;
+  }
+  
+  // Uluslararası format (+90 ile başlıyorsa)
+  if (phone.startsWith('+90')) {
+    const withoutCountry = phone.substring(3);
+    const cleaned = withoutCountry.replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      return `+90 ${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 8)} ${cleaned.slice(8, 10)}`;
+    }
+  }
+  
+  // Eğer formatlanamıyorsa orijinal numarayı döndür
+  return phone;
+};
+
 // --- ACTIVE/PASSIVE TOGGLE LOGIC ---
 window.showingPassiveGuardians = false;
 window.allPassiveGuardiansData = [];
@@ -61,7 +96,7 @@ window.displayPassiveGuardians = function displayPassiveGuardians(guardians) {
         <div class="guardian-info">
           <div class="guardian-name">${guardian.First_Name} ${guardian.Last_Name}</div>
           <div class="guardian-details">📧 ${guardian.Email || 'Belirtilmemiş'}</div>
-          <div class="guardian-details">📞 ${guardian.Phone || 'Belirtilmemiş'}</div>
+          <div class="guardian-details">📞 ${window.formatPhoneNumber(guardian.Phone)}</div>
           ${studentText}
           <div class="guardian-status">❌ Durum: Pasif</div>
         </div>
@@ -81,7 +116,7 @@ window.displayPassiveGuardians = function displayPassiveGuardians(guardians) {
 
 window.searchPassiveGuardians = function searchPassiveGuardians() {
   const nameSearch = document.getElementById('guardianNameSearch').value.toLocaleLowerCase('tr-TR');
-  const phoneSearch = document.getElementById('guardianPhoneSearch').value.toLocaleLowerCase('tr-TR');
+  const phoneSearch = document.getElementById('guardianPhoneSearch').value.replace(/\D/g, ''); // Sadece rakamları al
   const studentNameSearch = document.getElementById('studentNameSearch').value.toLocaleLowerCase('tr-TR');
   if (!window.allPassiveGuardiansData || window.allPassiveGuardiansData.length === 0) {
     alert('Pasif veli verisi henüz yüklenmedi.');
@@ -99,7 +134,9 @@ window.searchPassiveGuardians = function searchPassiveGuardians() {
       if (!fullName.includes(nameSearch)) shouldInclude = false;
     }
     if (phoneSearch && shouldInclude) {
-      if (!guardian.Phone.toLocaleLowerCase('tr-TR').includes(phoneSearch)) shouldInclude = false;
+      // Telefon numarasını temizle ve karşılaştır
+      const guardianPhoneClean = guardian.Phone ? guardian.Phone.replace(/\D/g, '') : '';
+      if (!guardianPhoneClean.includes(phoneSearch)) shouldInclude = false;
     }
     if (studentNameSearch && shouldInclude) {
       if (!guardian.Students || guardian.Students.length === 0) {
@@ -228,7 +265,7 @@ window.displayGuardianList = function displayGuardianList(guardians) {
         <div class="guardian-info">
           <div class="guardian-name">${guardian.First_Name} ${guardian.Last_Name}</div>
           <div class="guardian-details">📧 ${guardian.Email || 'Belirtilmemiş'}</div>
-          <div class="guardian-details">📞 ${guardian.Phone || 'Belirtilmemiş'}</div>
+          <div class="guardian-details">📞 ${window.formatPhoneNumber(guardian.Phone)}</div>
           ${studentText}
         </div>
         <div class="guardian-actions">
@@ -282,7 +319,7 @@ window.editGuardian = function editGuardian(guardianId) {
 
 window.searchGuardians = function searchGuardians() {
   const nameSearch = document.getElementById('guardianNameSearch').value.toLocaleLowerCase('tr-TR');
-  const phoneSearch = document.getElementById('guardianPhoneSearch').value.toLocaleLowerCase('tr-TR');
+  const phoneSearch = document.getElementById('guardianPhoneSearch').value.replace(/\D/g, ''); // Sadece rakamları al
   const studentNameSearch = document.getElementById('studentNameSearch').value.toLocaleLowerCase('tr-TR');
   if (!window.allGuardiansData) {
     alert('Veli verisi henüz yüklenmedi.');
@@ -300,7 +337,9 @@ window.searchGuardians = function searchGuardians() {
       if (!fullName.includes(nameSearch)) shouldInclude = false;
     }
     if (phoneSearch && shouldInclude) {
-      if (!guardian.Phone.toLocaleLowerCase('tr-TR').includes(phoneSearch)) shouldInclude = false;
+      // Telefon numarasını temizle ve karşılaştır
+      const guardianPhoneClean = guardian.Phone ? guardian.Phone.replace(/\D/g, '') : '';
+      if (!guardianPhoneClean.includes(phoneSearch)) shouldInclude = false;
     }
     if (studentNameSearch && shouldInclude) {
       if (!guardian.Students || guardian.Students.length === 0) {
