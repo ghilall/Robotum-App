@@ -712,7 +712,7 @@
   <!-- Add Course Modal -->
   <div id="courseModal" class="modal" style="display:none;">
     <div class="registration-container" style="position:relative; margin:auto;">
-      <button id="closeCourseModalBtn" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+      <button id="closeCourseModalBtn" onclick="closeCourseModal()" style="position:absolute; top:10px; right:10px; background:#dc2626; color:white; border:none; font-size:20px; cursor:pointer; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:1000;">&times;</button>
       <h1>Kurs Ekle</h1>
       <form id="addCourseForm">
         <label for="courseName">Kurs Adı</label>
@@ -743,7 +743,10 @@
           <option value="Aktif">Aktif</option>
           <option value="Pasif">Pasif</option>
         </select>
-        <button type="submit">Kaydı Tamamla</button>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button type="submit" style="flex:1;">Kaydı Tamamla</button>
+          <button type="button" onclick="closeCourseModal()" style="flex:1; background:#6b7280; padding:14px; border:none; color:white; font-size:18px; font-weight:600; border-radius:5px; cursor:pointer;">İptal</button>
+        </div>
       </form>
     </div>
   </div>
@@ -809,7 +812,7 @@
             </select>
           </div>
           <div style="flex-shrink: 0;">
-            <button id="addProgramBtn" style="padding:8px 16px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">
+            <button id="addProgramBtn" onclick="handleAddProgramClick()" style="padding:8px 16px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold; z-index:1000;">
               ➕ Program Ekle
             </button>
           </div>
@@ -1260,6 +1263,7 @@
 
     // Store current course information for filtering
     let currentCourseInfo = null;
+    window.currentCourseInfo = null; // Make it globally accessible
 
     // Close modal functions
     function closeCourseProgramsModal() {
@@ -1289,6 +1293,7 @@
       
       // Store current course info for filtering
       currentCourseInfo = { courseName, courseLevel, courseDifficulty };
+      window.currentCourseInfo = { courseName, courseLevel, courseDifficulty }; // Also set global
       
       try {
         // First, get the specific course by exact name match
@@ -1408,19 +1413,6 @@
       });
     }
 
-    // Add Program button functionality
-    const addProgramBtn = document.getElementById('addProgramBtn');
-    if (addProgramBtn) {
-      addProgramBtn.addEventListener('click', function() {
-        if (currentCourseInfo) {
-          // TODO: Implement program creation functionality
-          alert(`Program ekleme kısmını ekleyeceğim`);
-        } else {
-          alert('Lütfen önce bir kurs seçin.');
-        }
-      });
-    }
-
     // Function to view programs for a specific course
     window.viewCoursePrograms = function(courseName, courseLevel, courseDifficulty) {
       courseProgramsTitle.textContent = `Programlar - ${courseName}`;
@@ -1428,6 +1420,244 @@
       loadCoursePrograms(courseName, courseLevel, courseDifficulty);
     };
 
+    // Handle add program button click
+    window.handleAddProgramClick = function() {
+      console.log('handleAddProgramClick called');
+      console.log('currentCourseInfo:', currentCourseInfo);
+      console.log('window.currentCourseInfo:', window.currentCourseInfo);
+      
+      if (currentCourseInfo) {
+        console.log('Opening add program modal...');
+        window.openAddProgramModal(currentCourseInfo.courseName, currentCourseInfo.courseLevel, currentCourseInfo.courseDifficulty);
+      } else if (window.currentCourseInfo) {
+        console.log('Opening add program modal with window.currentCourseInfo...');
+        window.openAddProgramModal(window.currentCourseInfo.courseName, window.currentCourseInfo.courseLevel, window.currentCourseInfo.courseDifficulty);
+      } else {
+        alert('Lütfen önce bir kurs seçin.');
+      }
+    };
+
+    // Program Creation Modal Functionality
+    const addProgramModal = document.getElementById('addProgramModal');
+    const closeAddProgramModalBtn = document.getElementById('closeAddProgramModalBtn');
+    const cancelAddProgramBtn = document.getElementById('cancelAddProgramBtn');
+    const addProgramForm = document.getElementById('addProgramForm');
+    const programClassroom = document.getElementById('programClassroom');
+
+    let currentCourseForProgram = null;
+
+    // Close modal functions
+    function closeAddProgramModal() {
+      addProgramModal.style.display = 'none';
+      addProgramForm.reset();
+      currentCourseForProgram = null;
+    }
+
+    if (closeAddProgramModalBtn) {
+      closeAddProgramModalBtn.addEventListener('click', closeAddProgramModal);
+    }
+
+    if (cancelAddProgramBtn) {
+      cancelAddProgramBtn.addEventListener('click', closeAddProgramModal);
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+      if (e.target === addProgramModal) {
+        closeAddProgramModal();
+      }
+    });
+
+    // Load classrooms for the dropdown
+    async function loadClassrooms() {
+      try {
+        const response = await fetch('/api/classrooms', { credentials: 'include' });
+        const data = await response.json();
+        
+        const programClassroom = document.getElementById('programClassroom');
+        if (programClassroom) {
+          programClassroom.innerHTML = '<option value="">Sınıf seçiniz</option>';
+          data.classrooms.forEach(classroom => {
+            const option = document.createElement('option');
+            option.value = classroom.Classroom_ID;
+            option.textContent = classroom.Classroom_Name;
+            programClassroom.appendChild(option);
+          });
+        } else {
+          console.error('programClassroom element not found');
+        }
+      } catch (error) {
+        console.error('Error loading classrooms:', error);
+        const programClassroom = document.getElementById('programClassroom');
+        if (programClassroom) {
+          programClassroom.innerHTML = '<option value="">Sınıflar yüklenemedi</option>';
+        }
+      }
+    }
+
+    // Function to open add program modal
+    window.openAddProgramModal = function(courseName, courseLevel, courseDifficulty) {
+      console.log('openAddProgramModal called with:', { courseName, courseLevel, courseDifficulty });
+      
+      currentCourseForProgram = { courseName, courseLevel, courseDifficulty };
+      
+      // Get elements when needed to avoid null reference errors
+      const selectedCourseName = document.getElementById('selectedCourseName');
+      const selectedCourseLevel = document.getElementById('selectedCourseLevel');
+      const addProgramModal = document.getElementById('addProgramModal');
+      
+      if (!addProgramModal) {
+        console.error('addProgramModal element not found');
+        alert('Modal yüklenemedi. Lütfen sayfayı yenileyin.');
+        return;
+      }
+      
+      if (selectedCourseName) {
+        selectedCourseName.textContent = courseName;
+      } else {
+        console.error('selectedCourseName element not found');
+      }
+      
+      if (selectedCourseLevel) {
+        selectedCourseLevel.textContent = courseLevel;
+      } else {
+        console.error('selectedCourseLevel element not found');
+      }
+      
+      // Load classrooms
+      loadClassrooms();
+      
+      // Show modal
+      addProgramModal.style.display = 'flex';
+      console.log('Modal should now be visible');
+    };
+
+    // Handle form submission
+    if (addProgramForm) {
+      addProgramForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        if (!currentCourseForProgram) {
+          alert('Kurs bilgisi bulunamadı.');
+          return;
+        }
+
+        const formData = new FormData(addProgramForm);
+        const programData = {
+          courseId: null, // Will be set after getting course ID
+          day: formData.get('day'),
+          startTime: formData.get('startTime'),
+          endTime: formData.get('endTime'),
+          classroomId: formData.get('classroomId'),
+          capacity: parseInt(formData.get('capacity'))
+        };
+
+        try {
+          // First, get the course ID by name
+          const courseResponse = await fetch('/api/courses', { credentials: 'include' });
+          const courseData = await courseResponse.json();
+          
+          const exactCourse = courseData.courses.find(course => 
+            course.Course_Name === currentCourseForProgram.courseName
+          );
+          
+          if (!exactCourse) {
+            alert('Kurs bulunamadı.');
+            return;
+          }
+
+          programData.courseId = exactCourse.Course_ID;
+
+          // Submit the program
+          const response = await fetch('/api/programs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(programData)
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            alert(result.message);
+            closeAddProgramModal();
+            
+            // Refresh the programs list if the course programs modal is open
+            if (currentCourseInfo) {
+              await loadCoursePrograms(currentCourseInfo.courseName, currentCourseInfo.courseLevel, currentCourseInfo.courseDifficulty);
+            }
+          } else {
+            alert(result.error || 'Program eklenemedi.');
+          }
+        } catch (error) {
+          console.error('Error adding program:', error);
+          alert('Program eklenirken hata oluştu.');
+        }
+      });
+    }
+
+    // Add Program button functionality - moved here after all functions are defined
+    const addProgramBtn = document.getElementById('addProgramBtn');
+    console.log('addProgramBtn found:', addProgramBtn); // Debug log
+    if (addProgramBtn) {
+      addProgramBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Add Program button clicked via event listener!'); // Debug log
+        window.handleAddProgramClick();
+      });
+      console.log('Event listener attached to addProgramBtn'); // Debug log
+    } else {
+      console.error('addProgramBtn not found!'); // Debug log
+    }
+
   </script>
+
+  <!-- Program Creation Modal -->
+  <div id="addProgramModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); justify-content:center; align-items:center;">
+    <div class="modal-content" style="background:white; padding:30px; border-radius:8px; max-width:500px; width:90%; max-height:90vh; overflow-y:auto; position:relative;">
+      <button id="closeAddProgramModalBtn" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#666;">&times;</button>
+      <h2 id="addProgramTitle" style="margin-bottom:25px; color:#333; text-align:center;">Program Ekle</h2>
+      
+      <form id="addProgramForm">
+        <div style="margin-bottom:20px; padding:15px; background:#f8f9fa; border-radius:6px; border-left:4px solid #007bff;">
+          <strong>Kurs:</strong> <span id="selectedCourseName">-</span><br>
+          <strong>Seviye:</strong> <span id="selectedCourseLevel">-</span>
+        </div>
+        
+        <label for="programDay">Gün *</label>
+        <select id="programDay" name="day" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
+          <option value="">Gün seçiniz</option>
+          <option value="Pazartesi">Pazartesi</option>
+          <option value="Salı">Salı</option>
+          <option value="Çarşamba">Çarşamba</option>
+          <option value="Perşembe">Perşembe</option>
+          <option value="Cuma">Cuma</option>
+          <option value="Cumartesi">Cumartesi</option>
+          <option value="Pazar">Pazar</option>
+        </select>
+        
+        <label for="programStartTime">Başlangıç Saati *</label>
+        <input type="time" id="programStartTime" name="startTime" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
+        
+        <label for="programEndTime">Bitiş Saati *</label>
+        <input type="time" id="programEndTime" name="endTime" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
+        
+        <label for="programClassroom">Sınıf *</label>
+        <select id="programClassroom" name="classroomId" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
+          <option value="">Sınıf seçiniz</option>
+        </select>
+        
+        <label for="programCapacity">Kapasite *</label>
+        <input type="number" id="programCapacity" name="capacity" min="1" max="50" required style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ddd; border-radius:4px;" placeholder="Örn: 15">
+        
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button type="button" id="cancelAddProgramBtn" style="padding:10px 20px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;">İptal</button>
+          <button type="submit" style="padding:10px 20px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">Program Ekle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </body>
 </html>

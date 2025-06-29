@@ -140,41 +140,22 @@ async function toggleCourseStatus(courseId) {
 
 // Edit course function
 async function editCourse(courseId) {
-  try {
-    // Find the course data
-    const course = allCourses.find(c => c.id === courseId);
-    if (!course) {
-      alert('Kurs bulunamadı.');
-      return;
-    }
-
-    // Populate the edit modal
-    document.getElementById('editCourseName').value = course.name;
-    document.getElementById('editCourseCategory').value = course.categoryId;
-    document.getElementById('editCourseLevel').value = course.level;
-    document.getElementById('editCourseDifficulty').value = course.difficulty;
-    document.getElementById('editCourseStatus').value = course.status;
-    
-    // Store the course ID for the form submission
-    document.getElementById('editCourseForm').setAttribute('data-course-id', courseId);
-    
-    // Show the edit modal
-    document.getElementById('editCourseModal').style.display = 'flex';
-    
-    // Populate category dropdown
-    const categorySelect = document.getElementById('editCourseCategory');
-    categorySelect.innerHTML = '<option value="">Kategori seçiniz</option>';
-    Object.entries(categoryMap).forEach(([id, name]) => {
-      const option = document.createElement('option');
-      option.value = id;
-      option.textContent = name;
-      categorySelect.appendChild(option);
-    });
-    
-  } catch (err) {
-    alert('Kurs düzenleme hatası: ' + err.message);
-    console.error('Kurs düzenleme hatası:', err);
+  const course = allCourses.find(c => c.id === courseId);
+  if (!course) {
+    alert('Kurs bulunamadı.');
+    return;
   }
+  
+  // Populate edit form
+  document.getElementById('editCourseId').value = course.id;
+  document.getElementById('editCourseName').value = course.name;
+  document.getElementById('editCourseCategory').value = course.categoryId;
+  document.getElementById('editCourseLevel').value = course.level;
+  document.getElementById('editCourseDifficulty').value = course.difficulty;
+  document.getElementById('editCourseStatus').value = course.status;
+  
+  // Show edit modal
+  document.getElementById('editCourseModal').style.display = 'block';
 }
 
 // Permanently delete course function
@@ -205,6 +186,28 @@ async function permanentlyDeleteCourse(courseId, courseName) {
   }
 }
 
+// Global function to force close course modal (can be called from browser console)
+window.closeCourseModal = function() {
+  const modal = document.getElementById('courseModal');
+  if (modal) {
+    modal.style.display = 'none';
+    console.log('Course modal force closed');
+  } else {
+    console.log('Course modal not found');
+  }
+};
+
+// Global function to force close edit course modal
+window.closeEditCourseModal = function() {
+  const modal = document.getElementById('editCourseModal');
+  if (modal) {
+    modal.style.display = 'none';
+    console.log('Edit course modal force closed');
+  } else {
+    console.log('Edit course modal not found');
+  }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
   // Initial render
   refreshCourseList();
@@ -231,6 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Modal open/close
   const courseModal = document.getElementById('courseModal');
+  const closeCourseModalBtn = document.getElementById('closeCourseModalBtn');
+  
   document.getElementById('openCourseModalBtn').addEventListener('click', function() {
     courseModal.style.display = 'flex';
     document.getElementById('addCourseForm').reset();
@@ -244,11 +249,40 @@ document.addEventListener('DOMContentLoaded', function() {
       categorySelect.appendChild(option);
     });
   });
-  document.getElementById('closeCourseModalBtn').addEventListener('click', function() {
-    courseModal.style.display = 'none';
-  });
+  
+  // Multiple ways to close the course modal
+  if (closeCourseModalBtn) {
+    // Method 1: Event listener
+    closeCourseModalBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Close button clicked - method 1');
+      courseModal.style.display = 'none';
+    });
+    
+    // Method 2: Direct onclick (backup)
+    closeCourseModalBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Close button clicked - method 2');
+      courseModal.style.display = 'none';
+    };
+  }
+  
+  // Method 3: Click outside modal
   window.addEventListener('click', function(e) {
-    if (e.target === courseModal) courseModal.style.display = 'none';
+    if (e.target === courseModal) {
+      console.log('Clicked outside modal');
+      courseModal.style.display = 'none';
+    }
+  });
+  
+  // Method 4: Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && courseModal.style.display === 'flex') {
+      console.log('Escape key pressed');
+      courseModal.style.display = 'none';
+    }
   });
 
   // Edit course modal open/close
@@ -260,49 +294,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.target === editCourseModal) editCourseModal.style.display = 'none';
   });
 
-  // Add course form submit
-  document.getElementById('addCourseForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const name = document.getElementById('courseName').value;
-    const category = document.getElementById('courseCategory').value;
-    const level = document.getElementById('courseLevel').value;
-    const difficulty = document.getElementById('courseDifficulty').value;
-    const status = document.getElementById('courseStatus').value;
-    
-    if (!name || !category || !level || !difficulty || !status) {
-      alert('Tüm alanlar zorunludur.');
-      return;
-    }
-    
-    // Here you would send a POST request to your backend to add the course
-    try {
-      const response = await fetch('/api/courses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ name, category, level, difficulty, status })
-      });
-      if (!response.ok) throw new Error('Kurs eklenemedi');
-      courseModal.style.display = 'none';
-      await refreshCourseList();
-    } catch (err) {
-      alert('Kurs eklenemedi.');
-      console.error(err);
-    }
-  });
-
   // Edit course form submit
   document.getElementById('editCourseForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const courseId = this.getAttribute('data-course-id');
-    const name = document.getElementById('editCourseName').value;
+    const name = document.getElementById('editCourseName').value.trim();
     const category = document.getElementById('editCourseCategory').value;
     const level = document.getElementById('editCourseLevel').value;
     const difficulty = document.getElementById('editCourseDifficulty').value;
     const status = document.getElementById('editCourseStatus').value;
     
     if (!name || !category || !level || !difficulty || !status) {
-      alert('Tüm alanlar zorunludur.');
+      alert('Lütfen tüm alanları doldurun.');
       return;
     }
     
@@ -313,13 +316,73 @@ document.addEventListener('DOMContentLoaded', function() {
         credentials: 'include',
         body: JSON.stringify({ name, category, level, difficulty, status })
       });
-      if (!response.ok) throw new Error('Kurs güncellenemedi');
-      editCourseModal.style.display = 'none';
-      await refreshCourseList();
-      alert('Kurs başarıyla güncellendi.');
-    } catch (err) {
-      alert('Kurs güncellenemedi.');
-      console.error(err);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Kurs güncellenemedi');
+      }
+      
+      const result = await response.json();
+      console.log('Kurs güncellendi:', result);
+      
+      // Refresh course list
+      await fetchCourses();
+      renderCourseList();
+      
+      // Close modal
+      document.getElementById('editCourseModal').style.display = 'none';
+      
+      alert('Kurs başarıyla güncellendi!');
+    } catch (error) {
+      console.error('Kurs güncelleme hatası:', error);
+      alert('Kurs güncellenirken hata oluştu: ' + error.message);
+    }
+  });
+
+  // Add course form submit
+  document.getElementById('addCourseForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('courseName').value.trim();
+    const category = document.getElementById('courseCategory').value;
+    const level = document.getElementById('courseLevel').value;
+    const difficulty = document.getElementById('courseDifficulty').value;
+    const status = document.getElementById('courseStatus').value;
+    
+    if (!name || !category || !level || !difficulty || !status) {
+      alert('Lütfen tüm alanları doldurun.');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, category, level, difficulty, status })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Kurs eklenemedi');
+      }
+      
+      const result = await response.json();
+      console.log('Kurs eklendi:', result);
+      
+      // Reset form
+      document.getElementById('addCourseForm').reset();
+      
+      // Refresh course list
+      await fetchCourses();
+      renderCourseList();
+      
+      // Close modal
+      document.getElementById('courseModal').style.display = 'none';
+      
+      alert('Kurs başarıyla eklendi!');
+    } catch (error) {
+      console.error('Kurs ekleme hatası:', error);
+      alert('Kurs eklenirken hata oluştu: ' + error.message);
     }
   });
 });

@@ -25,7 +25,7 @@ import {
   changeStudentCourse,
   updateTeacher
 } from './admin/admin.js';
-import { getProgramsByCourse, getCategories, getCourseLevels, getCourses, toggleCourseStatus, addCourse, updateCourse, deleteCourse } from './courses.js';
+import { getProgramsByCourse, getCategories, getCourseLevels, getCourses, toggleCourseStatus, addCourse, updateCourse, deleteCourse, getClassrooms, getClassroomsByCategory, addProgram } from './courses.js';
 import {
   createTeacherAssignment,
   getTeacherAssignments,
@@ -83,6 +83,11 @@ router.post('/api/courses', addCourse);
 router.put('/api/courses/:courseId', updateCourse);
 router.delete('/api/courses/:courseId', deleteCourse);
 router.put('/api/courses/:courseId/toggle-status', toggleCourseStatus);
+
+// Classroom and Program routes
+router.get('/api/classrooms', getClassrooms);
+router.get('/api/classrooms/by-category/:categoryId', getClassroomsByCategory);
+router.post('/api/programs', addProgram);
 
 // Teacher assignment routes
 router.post('/api/teacher-assignments', createTeacherAssignment);
