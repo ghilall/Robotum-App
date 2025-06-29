@@ -14,6 +14,10 @@ console.log(result.rows);
 //Sets up the Express app and enables parsing of JSON and form data
 const port = process.env.PORT || 3000;
 const app = express();
+
+// Trust proxy for Render
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -21,12 +25,24 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET || '2218',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: { 
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production' && process.env.FORCE_HTTPS !== 'false',
+    httpOnly: true,
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+  },
+  name: 'sessionId'
 }));
+
+app.use((req, res, next) => {
+  console.log('Session ID:', req.sessionID);
+  console.log('User in session:', req.session.user ? 'Yes' : 'No');
+  if (req.session.user) {
+    console.log('User role:', req.session.user.Role_ID);
+  }
+  next();
+});
 
 //Static Files
 const __filename = fileURLToPath(import.meta.url);

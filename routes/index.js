@@ -101,4 +101,17 @@ router.delete('/api/admin/permanently-delete-guardian/:id', permanentlyDeleteGua
 // New route for permanently deleting a teacher
 router.delete('/api/admin/permanently-delete-teacher/:id', permanentlyDeleteTeacher);
 
+// Add this route for debugging sessions
+router.get('/api/session-debug', (req, res) => {
+  res.json({
+    sessionExists: !!req.session,
+    sessionID: req.sessionID,
+    userExists: !!req.session.user,
+    userData: req.session.user || null,
+    isAdmin: req.session.user ? req.session.user.Role_ID === 1 : false,
+    nodeEnv: process.env.NODE_ENV,
+    sessionSecret: process.env.SESSION_SECRET ? 'Set' : 'Not set'
+  });
+});
+
 export default router; 

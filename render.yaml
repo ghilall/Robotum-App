@@ -10,6 +10,8 @@ services:
         value: production
       - key: SESSION_SECRET
         generateValue: true
+      - key: FORCE_HTTPS
+        value: false
       - key: DATABASE_URL
         sync: false
       - key: DB_HOST
@@ -21,4 +23,7 @@ services:
       - key: DB_USER
         sync: false
       - key: DB_PASSWORD
-        sync: false 
+        sync: false
+    secretFiles:
+      - key: .env
+        name: .env
