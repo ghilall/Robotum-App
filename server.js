@@ -35,15 +35,6 @@ app.use(session({
   name: 'sessionId'
 }));
 
-app.use((req, res, next) => {
-  console.log('Session ID:', req.sessionID);
-  console.log('User in session:', req.session.user ? 'Yes' : 'No');
-  if (req.session.user) {
-    console.log('User role:', req.session.user.Role_ID);
-  }
-  next();
-});
-
 //Static Files
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);

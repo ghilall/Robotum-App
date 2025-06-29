@@ -10,22 +10,7 @@ window.loadStudentList = async function loadStudentList() {
       }
       
       const data = await response.json();
-      console.log('Received student data:', data);
       
-      // Debug: Check time formats
-      if (data.grouped) {
-        for (const courseName in data.grouped) {
-          const students = data.grouped[courseName];
-          for (const studentId in students) {
-            const student = students[studentId];
-            if (student.program && student.program.length > 0) {
-              console.log('Sample program times:', student.program[0]);
-              break;
-            }
-          }
-          break;
-        }
-      }
       // Store the original data for search functionality
       window.allStudentsData = data.grouped;
       window.displayStudentList(data.grouped);
@@ -153,8 +138,6 @@ window.searchStudents = function searchStudents() {
   const daySearch = document.getElementById('daySearch').value;
   const nameSearch = document.getElementById('nameSearch').value.toLocaleLowerCase('tr-TR');
   
-  console.log('Search parameters:', { categorySearch, courseSearch, daySearch, nameSearch });
-  
   if (!window.allStudentsData) {
     alert('Öğrenci verisi henüz yüklenmedi.');
     return;
@@ -175,7 +158,6 @@ window.searchStudents = function searchStudents() {
       
       // Category filter
       if (categorySearch && shouldInclude) {
-        console.log('Checking category:', { studentCategoryId: student.categoryId, searchCategoryId: categorySearch });
         if (student.categoryId != categorySearch) {
           shouldInclude = false;
         }
@@ -223,7 +205,6 @@ window.searchStudents = function searchStudents() {
       filteredData[courseName] = filteredStudents;
     }
   }
-  console.log('Search results:', { totalResults, filteredData });
   window.displaySearchResults(totalResults, categorySearch, '', courseSearch, '', daySearch);
   window.displayStudentList(filteredData);
 };
@@ -287,10 +268,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.loadSearchFilters = async function loadSearchFilters() {
   try {
-    console.log('Loading search filters...');
     const catResponse = await fetch('/api/categories', { credentials: 'include' });
     const catData = await catResponse.json();
-    console.log('Categories loaded:', catData);
     const categorySelect = document.getElementById('categorySearch');
     
     // Clear existing options first to prevent duplicates
@@ -309,7 +288,6 @@ window.loadSearchFilters = async function loadSearchFilters() {
     categorySearchElement.removeEventListener('change', window.updateCourseOptions);
     categorySearchElement.addEventListener('change', window.updateCourseOptions);
     
-    console.log('Search filters loaded successfully');
   } catch (error) {
     console.error('Error loading search filters:', error);
   }
