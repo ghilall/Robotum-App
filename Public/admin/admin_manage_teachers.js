@@ -1,5 +1,40 @@
 // Teacher Management Functions for Admin Dashboard
 
+// --- TELEFON NUMARASI FORMATLAMA FONKSİYONU ---
+window.formatPhoneNumber = function formatPhoneNumber(phone) {
+  if (!phone) return 'Belirtilmemiş';
+  
+  // Telefon numarasını temizle (sadece rakamları al)
+  const cleaned = phone.replace(/\D/g, '');
+  
+  // Türkiye telefon numarası formatı (10 haneli)
+  if (cleaned.length === 10) {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 8)} ${cleaned.slice(8, 10)}`;
+  }
+  
+  // 11 haneli numara (başında 0 varsa)
+  if (cleaned.length === 11 && cleaned.startsWith('0')) {
+    return `${cleaned.slice(1, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7, 9)} ${cleaned.slice(9, 11)}`;
+  }
+  
+  // 11 haneli numara (başında 5 varsa - cep telefonu)
+  if (cleaned.length === 11 && cleaned.startsWith('5')) {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 8)} ${cleaned.slice(8, 11)}`;
+  }
+  
+  // Uluslararası format (+90 ile başlıyorsa)
+  if (phone.startsWith('+90')) {
+    const withoutCountry = phone.substring(3);
+    const cleaned = withoutCountry.replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      return `+90 ${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 8)} ${cleaned.slice(8, 10)}`;
+    }
+  }
+  
+  // Eğer formatlanamıyorsa orijinal numarayı döndür
+  return phone;
+};
+
 // --- ACTIVE/PASSIVE TOGGLE LOGIC ---
 window.showingPassiveTeachers = false;
 window.allPassiveTeachersData = [];
@@ -96,7 +131,7 @@ window.displayPassiveTeachers = function displayPassiveTeachers(teachers) {
           <div class="teacher-info">
             <div class="teacher-name">${teacher.First_Name} ${teacher.Last_Name}</div>
             <div class="teacher-details">📧 ${teacher.Email || 'Belirtilmemiş'}</div>
-            <div class="teacher-details">📞 ${teacher.Phone || 'Belirtilmemiş'}</div>
+            <div class="teacher-details">📞 ${window.formatPhoneNumber(teacher.Phone)}</div>
             <div class="teacher-details">🎓 Deneyim: ${teacher.Experience ? teacher.Experience : ''}</div>
             <div class="teacher-details">📅 Başlangıç: ${startDate} | Bitiş: ${endDate}</div>
             <div class="teacher-status">❌ Durum: Pasif</div>
@@ -288,7 +323,7 @@ window.displayTeacherList = function displayTeacherList(teachers) {
           <div class="teacher-info">
             <div class="teacher-name">${teacher.First_Name} ${teacher.Last_Name}</div>
             <div class="teacher-details">📧 ${teacher.Email || 'Belirtilmemiş'}</div>
-            <div class="teacher-details">📞 ${teacher.Phone || 'Belirtilmemiş'}</div>
+            <div class="teacher-details">📞 ${window.formatPhoneNumber(teacher.Phone)}</div>
             <div class="teacher-details">🎓 Deneyim: ${teacher.Experience ? teacher.Experience : ''}</div>
             <div class="teacher-details">📅 Başlangıç: ${startDate} | Bitiş: ${endDate}</div>
           </div>
