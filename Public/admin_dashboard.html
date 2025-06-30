@@ -355,8 +355,8 @@
         <select id="courseId" name="courseId" required>
           <option value="">Yükleniyor...</option>
         </select>
-        <label for="programDay">Gün</label>
-        <select id="programDay" name="programDay" required>
+        <label for="studentProgramDay">Gün</label>
+        <select id="studentProgramDay" name="programDay" required>
           <option value="">Gün seçiniz</option>
           <option value="Pazartesi">Pazartesi</option>
           <option value="Salı">Salı</option>
@@ -737,6 +737,10 @@
         <select id="courseStatus" name="courseStatus" required>
           <option value="Aktif">Aktif</option>
           <option value="Pasif">Pasif</option>
+        </select>
+        <label for="courseClassroom">Sınıf</label>
+        <select id="courseClassroom" name="courseClassroom" required>
+          <option value="">Sınıf seçiniz</option>
         </select>
         <div style="display:flex; gap:10px; margin-top:20px;">
           <button type="submit" style="flex:1;">Kaydı Tamamla</button>
@@ -1398,7 +1402,6 @@
     const closeAddProgramModalBtn = document.getElementById('closeAddProgramModalBtn');
     const cancelAddProgramBtn = document.getElementById('cancelAddProgramBtn');
     const addProgramForm = document.getElementById('addProgramForm');
-    const programClassroom = document.getElementById('programClassroom');
 
     let currentCourseForProgram = null;
 
@@ -1454,36 +1457,26 @@
     // Function to open add program modal
     window.openAddProgramModal = function(courseName, courseLevel, courseDifficulty) {
       console.log('openAddProgramModal called with:', { courseName, courseLevel, courseDifficulty });
-      
       currentCourseForProgram = { courseName, courseLevel, courseDifficulty };
-      
-      // Get elements when needed to avoid null reference errors
       const selectedCourseName = document.getElementById('selectedCourseName');
       const selectedCourseLevel = document.getElementById('selectedCourseLevel');
       const addProgramModal = document.getElementById('addProgramModal');
-      
       if (!addProgramModal) {
         console.error('addProgramModal element not found');
         alert('Modal yüklenemedi. Lütfen sayfayı yenileyin.');
         return;
       }
-      
       if (selectedCourseName) {
         selectedCourseName.textContent = courseName;
       } else {
         console.error('selectedCourseName element not found');
       }
-      
       if (selectedCourseLevel) {
         selectedCourseLevel.textContent = courseLevel;
       } else {
         console.error('selectedCourseLevel element not found');
       }
-      
-      // Load classrooms
-      loadClassrooms();
-      
-      // Show modal
+      // REMOVE: loadClassrooms();
       addProgramModal.style.display = 'flex';
       console.log('Modal should now be visible');
     };
@@ -1492,38 +1485,29 @@
     if (addProgramForm) {
       addProgramForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
         if (!currentCourseForProgram) {
           alert('Kurs bilgisi bulunamadı.');
           return;
         }
-
         const formData = new FormData(addProgramForm);
         const programData = {
-          courseId: null, // Will be set after getting course ID
           day: formData.get('day'),
           startTime: formData.get('startTime'),
           endTime: formData.get('endTime'),
-          classroomId: formData.get('classroomId'),
           capacity: parseInt(formData.get('capacity'))
         };
-
         try {
-          // First, get the course ID by name
+          // Get the course ID by name (from context, not from form)
           const courseResponse = await fetch('/api/courses', { credentials: 'include' });
           const courseData = await courseResponse.json();
-          
           const exactCourse = courseData.courses.find(course => 
             course.Course_Name === currentCourseForProgram.courseName
           );
-          
           if (!exactCourse) {
             alert('Kurs bulunamadı.');
             return;
           }
-
           programData.courseId = exactCourse.Course_ID;
-
           // Submit the program
           const response = await fetch('/api/programs', {
             method: 'POST',
@@ -1531,14 +1515,10 @@
             credentials: 'include',
             body: JSON.stringify(programData)
           });
-
           const result = await response.json();
-
           if (response.ok) {
-            alert(result.message);
+            showProgramSuccessToast();
             closeAddProgramModal();
-            
-            // Refresh the programs list if the course programs modal is open
             if (currentCourseInfo) {
               await loadCoursePrograms(currentCourseInfo.courseName, currentCourseInfo.courseLevel, currentCourseInfo.courseDifficulty);
             }
@@ -1626,6 +1606,48 @@
       }
     }
 
+    async function loadClassroomsForCourseModal() {
+      try {
+        const response = await fetch('/api/classrooms', { credentials: 'include' });
+        const data = await response.json();
+        const classroomSelect = document.getElementById('courseClassroom');
+        if (classroomSelect) {
+          classroomSelect.innerHTML = '<option value="">Sınıf seçiniz</option>';
+          data.classrooms.forEach(classroom => {
+            const option = document.createElement('option');
+            option.value = classroom.Classroom_ID;
+            option.textContent = classroom.Classroom_Name + ' (Kapasite: ' + classroom.Capacity + ')';
+            classroomSelect.appendChild(option);
+          });
+        }
+      } catch (err) {
+        const classroomSelect = document.getElementById('courseClassroom');
+        if (classroomSelect) {
+          classroomSelect.innerHTML = '<option value="">Sınıflar yüklenemedi</option>';
+        }
+      }
+    }
+    // Open course modal and load classrooms
+    const openCourseModalBtn = document.getElementById('openCourseModalBtn');
+    if (openCourseModalBtn) {
+      openCourseModalBtn.addEventListener('click', function() {
+        loadClassroomsForCourseModal();
+        document.getElementById('courseModal').style.display = 'block';
+      });
+    }
+
+    // Add this function to show the toast
+    function showProgramSuccessToast() {
+      const toast = document.getElementById('programSuccessToast');
+      if (!toast) return;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.opacity = '1'; }, 10);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.style.display = 'none'; }, 400);
+      }, 2500);
+    }
+
   </script>
 
   <!-- Program Creation Modal -->
@@ -1639,7 +1661,6 @@
           <strong>Kurs:</strong> <span id="selectedCourseName">-</span><br>
           <strong>Seviye:</strong> <span id="selectedCourseLevel">-</span>
         </div>
-        
         <label for="programDay">Gün *</label>
         <select id="programDay" name="day" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
           <option value="">Gün seçiniz</option>
@@ -1651,27 +1672,23 @@
           <option value="Cumartesi">Cumartesi</option>
           <option value="Pazar">Pazar</option>
         </select>
-        
         <label for="programStartTime">Başlangıç Saati *</label>
         <input type="time" id="programStartTime" name="startTime" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
-        
         <label for="programEndTime">Bitiş Saati *</label>
         <input type="time" id="programEndTime" name="endTime" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
-        
-        <label for="programClassroom">Sınıf *</label>
-        <select id="programClassroom" name="classroomId" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
-          <option value="">Sınıf seçiniz</option>
-        </select>
-        
         <label for="programCapacity">Kapasite *</label>
         <input type="number" id="programCapacity" name="capacity" min="1" max="50" required style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ddd; border-radius:4px;" placeholder="Örn: 15">
-        
         <div style="display:flex; gap:10px; justify-content:flex-end;">
           <button type="button" id="cancelAddProgramBtn" style="padding:10px 20px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;">İptal</button>
           <button type="submit" style="padding:10px 20px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">Program Ekle</button>
         </div>
       </form>
     </div>
+  </div>
+
+  <!-- Add this just before </body> -->
+  <div id="programSuccessToast" style="display:none; position:fixed; bottom:40px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:18px 32px; border-radius:8px; font-size:18px; font-weight:bold; box-shadow:0 4px 16px rgba(0,0,0,0.18); z-index:99999; transition:opacity 0.4s; opacity:0;">
+    Program başarıyla kaydedildi!
   </div>
 
 </body>

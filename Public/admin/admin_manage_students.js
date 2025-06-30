@@ -291,8 +291,9 @@ window.loadSearchFilters = async function loadSearchFilters() {
   }
 }
 
-window.loadAllCourses = async function loadAllCourses() {
+async function loadAllCourses() {
   const courseSelect = document.getElementById('courseSearch');
+  const programSelect = document.getElementById('programId');
   courseSelect.innerHTML = '';
   const defaultOption = document.createElement('option');
   defaultOption.value = '';
@@ -320,6 +321,7 @@ window.loadAllCourses = async function loadAllCourses() {
 window.updateCourseOptions = async function updateCourseOptions() {
   const categoryId = document.getElementById('categorySearch').value;
   const courseSelect = document.getElementById('courseSearch');
+  const programSelect = document.getElementById('programId');
   courseSelect.innerHTML = '';
   if (!categoryId) {
     await window.loadAllCourses();
@@ -407,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const levelFilter = document.getElementById('levelFilter');
   const courseSelect = document.getElementById('courseId');
   const programSelect = document.getElementById('programId');
-  const programDaySelect = document.getElementById('programDay');
+  const programDaySelect = document.getElementById('studentProgramDay');
   const guardianSearch = document.getElementById('guardianSearch');
   const guardianResults = document.getElementById('guardianResults');
   const guardianIdInput = document.getElementById('guardianId');

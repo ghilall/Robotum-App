@@ -95,17 +95,17 @@ export const getCourses = async (req, res) => {
 };
 
 export const addCourse = async (req, res) => {
-  const { name, category, level, difficulty, status } = req.body;
-  if (!name || !category || !level || !difficulty || !status) {
-    return res.status(400).json({ error: 'Kurs adı, kategori, seviye, zorluk ve durum zorunludur.' });
+  const { name, category, level, difficulty, status, classroomId } = req.body;
+  if (!name || !category || !level || !difficulty || !status || !classroomId) {
+    return res.status(400).json({ error: 'Kurs adı, kategori, seviye, zorluk, durum ve sınıf zorunludur.' });
   }
   try {
     // Insert the course
     const result = await pool.query(
-      `INSERT INTO "Courses" ("Course_Name", "Category_ID", "Level", "Difficulty", "Status")
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING "Course_ID", "Course_Name", "Category_ID", "Level", "Difficulty", "Status"`,
-      [name, category, level, difficulty, status]
+      `INSERT INTO "Courses" ("Course_Name", "Category_ID", "Level", "Difficulty", "Status", "Classroom_ID")
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING "Course_ID", "Course_Name", "Category_ID", "Level", "Difficulty", "Status", "Classroom_ID"`,
+      [name, category, level, difficulty, status, classroomId]
     );
     res.status(201).json({ course: result.rows[0] });
   } catch (err) {
@@ -228,8 +228,8 @@ export const toggleCourseStatus = async (req, res) => {
 export const getClassrooms = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT "Classroom_ID", "Classroom_Name" 
-      FROM "Classrooms" 
+      SELECT "Classroom_ID", "Classroom_Name", "Capacity"
+      FROM "Classrooms"
       ORDER BY "Classroom_Name"
     `);
     res.json({ classrooms: result.rows });
@@ -263,49 +263,33 @@ export const getClassroomsByCategory = async (req, res) => {
 
 // Add program to course
 export const addProgram = async (req, res) => {
-  const { courseId, day, startTime, endTime, classroomId, capacity } = req.body;
-  
-  if (!courseId || !day || !startTime || !endTime || !classroomId || !capacity) {
+  const { courseId, day, startTime, endTime, capacity } = req.body;
+  if (!courseId || !day || !startTime || !endTime || !capacity) {
     return res.status(400).json({ error: 'Tüm alanlar zorunludur.' });
   }
-
-  // Validate capacity is a positive number
   if (isNaN(capacity) || capacity <= 0) {
     return res.status(400).json({ error: 'Kapasite pozitif bir sayı olmalıdır.' });
   }
-
-  // Validate time format (HH:MM)
   const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
   if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
     return res.status(400).json({ error: 'Saat formatı HH:MM olmalıdır.' });
   }
-
-  // Validate start time is before end time
   if (startTime >= endTime) {
     return res.status(400).json({ error: 'Başlangıç saati bitiş saatinden önce olmalıdır.' });
   }
-
   try {
-    // Check if course exists
+    // Fetch classroomId from course
     const courseCheck = await pool.query(
-      `SELECT "Course_ID", "Course_Name" FROM "Courses" WHERE "Course_ID" = $1`,
+      `SELECT "Course_ID", "Course_Name", "Classroom_ID" FROM "Courses" WHERE "Course_ID" = $1`,
       [courseId]
     );
-
     if (courseCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Kurs bulunamadı.' });
     }
-
-    // Check if classroom exists and is active
-    const classroomCheck = await pool.query(
-      `SELECT "Classroom_ID", "Classroom_Name" FROM "Classrooms" WHERE "Classroom_ID" = $1`,
-      [classroomId]
-    );
-
-    if (classroomCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Sınıf bulunamadı.' });
+    const classroomId = courseCheck.rows[0].Classroom_ID;
+    if (!classroomId) {
+      return res.status(400).json({ error: 'Kursa atanmış bir sınıf yok.' });
     }
-
     // Check for time conflicts in the same classroom
     const conflictCheck = await pool.query(`
       SELECT p."Program_ID", c."Course_Name", p."Day", p."Start_Time", p."End_Time"
@@ -319,21 +303,18 @@ export const addProgram = async (req, res) => {
           (p."Start_Time" >= $3 AND p."End_Time" <= $4)
         )
     `, [classroomId, day, startTime, endTime]);
-
     if (conflictCheck.rows.length > 0) {
       const conflict = conflictCheck.rows[0];
       return res.status(409).json({ 
         error: `Sınıf zaman çakışması: ${conflict.Course_Name} - ${conflict.Day} ${conflict.Start_Time}-${conflict.End_Time}` 
       });
     }
-
     // Insert the new program
     const result = await pool.query(`
       INSERT INTO "Programs" ("Course_ID", "Day", "Start_Time", "End_Time", "Classroom_ID", "Capacity")
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING "Program_ID", "Course_ID", "Day", "Start_Time", "End_Time", "Classroom_ID", "Capacity"
     `, [courseId, day, startTime, endTime, classroomId, capacity]);
-
     res.status(201).json({ 
       program: result.rows[0],
       message: 'Program başarıyla eklendi.'
