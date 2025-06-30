@@ -11,7 +11,7 @@ export const getProgramsByCourse = async (req, res) => {
         p."Program_ID", p."Day", p."Start_Time", p."End_Time", p."Classroom_ID", p."Capacity",
         COUNT(sp."Student_ID") AS "Current_Count"
       FROM "Programs" p
-      LEFT JOIN "Program_Students" sp ON p."Program_ID" = sp."Program_ID"
+      LEFT JOIN "Enrollments" sp ON p."Program_ID" = sp."Program_ID"
       WHERE p."Course_ID" = $1
       GROUP BY p."Program_ID", p."Day", p."Start_Time", p."End_Time", p."Classroom_ID", p."Capacity"
       ORDER BY 

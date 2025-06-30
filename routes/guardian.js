@@ -106,9 +106,9 @@ if (isNaN(studentId)) return res.status(400).json({ error: 'Geçersiz öğrenci 
     // 2. Öğrencinin seçtiği program saatleri
     const programResult = await pool.query(`
       SELECT p."Program_ID", p."Day", p."Start_Time", p."End_Time", p."Classroom_ID"
-      FROM "Program_Students" ps
-      JOIN "Programs" p ON ps."Program_ID" = p."Program_ID"
-      WHERE ps."Student_ID" = $1
+      FROM "Programs" p
+      JOIN "Enrollments" e ON p."Program_ID" = e."Program_ID"
+      WHERE e."Student_ID" = $1
       ORDER BY 
         CASE p."Day"
           WHEN 'Pazartesi' THEN 1

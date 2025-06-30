@@ -74,8 +74,8 @@ export const getStudentList = async (req, res) => {
         cat."Category_Name", p."Day", p."Start_Time", p."End_Time", p."Classroom_ID"
       FROM "Students" s
       JOIN "Users" u ON s."User_ID" = u."User_ID"
-      JOIN "Program_Students" ps ON s."Student_ID" = ps."Student_ID"
-      JOIN "Programs" p ON ps."Program_ID" = p."Program_ID"
+      JOIN "Enrollments" e ON s."Student_ID" = e."Student_ID"
+      JOIN "Programs" p ON e."Program_ID" = p."Program_ID"
       JOIN "Courses" c ON p."Course_ID" = c."Course_ID"
       LEFT JOIN "Categories" cat ON c."Category_ID" = cat."Category_ID"
       WHERE u."Status" = 'Aktif'
@@ -206,7 +206,7 @@ export const permanentlyDeleteStudent = async (req, res) => {
       return res.status(404).json({ error: 'Öğrenci bulunamadı.' });
     }
     const userId = studentResult.rows[0].User_ID;
-    await client.query(`DELETE FROM "Program_Students" WHERE "Student_ID" = $1`, [studentId]);
+    await client.query(`DELETE FROM "Enrollments" WHERE "Student_ID" = $1`, [studentId]);
     await client.query(`DELETE FROM "Students" WHERE "Student_ID" = $1`, [studentId]);
     await client.query(`DELETE FROM "Users" WHERE "User_ID" = $1`, [userId]);
     await client.query('COMMIT');
@@ -282,12 +282,12 @@ export const changeStudentCourse = async (req, res) => {
   try {
     // Remove old program assignments
     await pool.query(
-      `DELETE FROM "Program_Students" WHERE "Student_ID" = $1`,
+      `DELETE FROM "Enrollments" WHERE "Student_ID" = $1`,
       [studentId]
     );
     // Add new program assignment
     await pool.query(
-      `INSERT INTO "Program_Students" ("Student_ID", "Program_ID") VALUES ($1, $2)`,
+      `INSERT INTO "Enrollments" ("Student_ID", "Program_ID", "Enrollment_Date") VALUES ($1, $2, NOW())`,
       [studentId, programId]
     );
     res.json({ message: 'Kurs ve program güncellendi.' });

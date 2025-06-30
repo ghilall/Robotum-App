@@ -147,7 +147,7 @@ export const registerStudent = async (req, res) => {
 
     for (const progId of selectedProgramIds) {
       await client.query(
-        `INSERT INTO "Program_Students" ("Student_ID", "Program_ID") VALUES ($1, $2)`,
+        `INSERT INTO "Enrollments" ("Student_ID", "Program_ID", "Enrollment_Date") VALUES ($1, $2, NOW())`,
         [studentId, progId]
       );
     }
