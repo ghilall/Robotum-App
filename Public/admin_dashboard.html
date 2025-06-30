@@ -351,6 +351,10 @@
         <select id="levelFilter">
           <option value="">Tümü</option>
         </select>
+        <label for="courseId">Kurs</label>
+        <select id="courseId" name="courseId" required>
+          <option value="">Yükleniyor...</option>
+        </select>
         <label for="programDay">Gün</label>
         <select id="programDay" name="programDay" required>
           <option value="">Gün seçiniz</option>
@@ -361,10 +365,6 @@
           <option value="Cuma">Cuma</option>
           <option value="Cumartesi">Cumartesi</option>
           <option value="Pazar">Pazar</option>
-        </select>
-        <label for="courseId">Kurs</label>
-        <select id="courseId" name="courseId" required>
-          <option value="">Yükleniyor...</option>
         </select>
         <label for="programId">Program Saati</label>
         <select id="programId" name="programId" required>
@@ -993,6 +993,7 @@
       window.open('/passive_teachers.html', '_blank', 'width=1200,height=800');
     }
 
+    
     // Modal açma/kapama
     if (openStudentModalBtn && studentModal && closeStudentModalBtn) {
       openStudentModalBtn.addEventListener('click', () => {
