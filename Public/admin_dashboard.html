@@ -1176,7 +1176,53 @@
       }
     });
 
-    loadStudentModalCategoriesAndLevels();
+    async function loadStudentModalCategoriesAndLevels() {
+      const catSelect = document.getElementById('categoryFilter');
+      catSelect.innerHTML = '<option value="">Tümü</option>';
+      try {
+        const [catRes, levelRes] = await Promise.all([
+          fetch('/api/categories', { credentials: 'include' }),
+          fetch('/api/course-levels', { credentials: 'include' })
+        ]);
+        const cats = await catRes.json();
+        const levels = await levelRes.json();
+        if (cats.categories && cats.categories.length > 0) {
+          cats.categories.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.Category_ID;
+            opt.textContent = c.Category_Name;
+            catSelect.appendChild(opt);
+          });
+        }
+        const levelSelect = document.getElementById('levelFilter');
+        levelSelect.innerHTML = '<option value="">Tümü</option>';
+        levels.levels.forEach(lvl => {
+          const opt = document.createElement('option');
+          opt.value = lvl;
+          opt.textContent = lvl;
+          levelSelect.appendChild(opt);
+        });
+      } catch (err) {
+        catSelect.innerHTML = '<option value="">Kategoriler yüklenemedi</option>';
+        console.error('Kategoriler yüklenemedi:', err);
+      }
+    }
+
+    if (openStudentModalBtn && studentModal && closeStudentModalBtn) {
+      openStudentModalBtn.addEventListener('click', () => {
+        document.querySelector('#studentModal h1').textContent = 'Öğrenci Kayıt Formu';
+        form.reset();
+        form.guardianId.value = '';
+        form.guardianSearch.value = '';
+        studentModal.style.display = 'flex';
+      });
+      closeStudentModalBtn.addEventListener('click', () => {
+        studentModal.style.display = 'none';
+      });
+      window.addEventListener('click', (e) => {
+        if (e.target === studentModal) studentModal.style.display = 'none';
+      });
+    }
 
     async function loadTeacherCategories() {
       const categorySelect = document.getElementById('teacherCategoryId');
