@@ -60,15 +60,10 @@
     <!-- Top Header -->
     <header class="top-header">
       <div class="header-left">
-        <button class="mobile-menu-toggle" onclick="toggleSidebar()">☰</button>
-        <h1>Robotum Yönetim Sistemi</h1>
+        <h1>Admin Paneli</h1>
       </div>
       <div class="header-right">
-        <input type="text" class="search-input" placeholder="Ara..." id="searchInput">
-        <div class="admin-badge">
-          <i>👤</i>
-          <span>Admin</span>
-        </div>
+        <div class="admin-badge">Admin</div>
       </div>
     </header>
 
@@ -948,12 +943,6 @@
       overlay.classList.remove('open');
     }
 
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-      const searchTerm = e.target.value.toLowerCase();
-      // Add search functionality here if needed
-    });
-
     // Logout functionality (keeping your existing logic)
     document.getElementById('logoutBtn').addEventListener('click', () => {
       localStorage.removeItem('user');
@@ -1415,9 +1404,22 @@
 
     // Function to view programs for a specific course
     window.viewCoursePrograms = function(courseName, courseLevel, courseDifficulty) {
+      // Modal ve başlık elementlerini bul
+      const courseProgramsModal = document.getElementById('courseProgramsModal');
+      const courseProgramsTitle = document.getElementById('courseProgramsTitle');
+      if (!courseProgramsModal || !courseProgramsTitle) {
+        alert('Programlar modalı bulunamadı. Lütfen sayfayı yenileyin.');
+        return;
+      }
       courseProgramsTitle.textContent = `Programlar - ${courseName}`;
       courseProgramsModal.style.display = 'flex';
-      loadCoursePrograms(courseName, courseLevel, courseDifficulty);
+      if (typeof loadCoursePrograms === 'function') {
+        loadCoursePrograms(courseName, courseLevel, courseDifficulty);
+      } else if (window.loadCoursePrograms) {
+        window.loadCoursePrograms(courseName, courseLevel, courseDifficulty);
+      } else {
+        alert('Programlar yüklenemedi.');
+      }
     };
 
     // Handle add program button click
@@ -1609,6 +1611,65 @@
       console.log('Event listener attached to addProgramBtn'); // Debug log
     } else {
       console.error('addProgramBtn not found!'); // Debug log
+    }
+
+    // Program Ekle modalını kapat
+    function closeAddProgramModal() {
+      const addProgramModal = document.getElementById('addProgramModal');
+      if (addProgramModal) addProgramModal.style.display = 'none';
+    }
+
+    // Kapatma butonuna event listener ekle
+    document.addEventListener('DOMContentLoaded', function() {
+      const closeBtn = document.getElementById('closeAddProgramModalBtn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeAddProgramModal);
+      }
+      // İptal butonuna event listener ekle
+      const cancelBtn = document.getElementById('cancelAddProgramBtn');
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeAddProgramModal);
+      }
+      // Modal arka planına tıklayınca kapansın
+      const addProgramModal = document.getElementById('addProgramModal');
+      if (addProgramModal) {
+        addProgramModal.addEventListener('click', function(e) {
+          if (e.target === addProgramModal) closeAddProgramModal();
+        });
+      }
+    });
+
+    // Kursu pasife alma işlemi (modal içi)
+    async function toggleModalCourseStatus(courseId) {
+      // Kursu bul
+      const course = allCourses.find(c => c.id === courseId);
+      if (!course) {
+        alert('Kurs bulunamadı.');
+        return;
+      }
+      // Eğer kurs aktifse ve pasife alınacaksa, onay iste
+      if (course.status === 'Aktif') {
+        const confirmed = confirm(`"${course.name}" kursunu pasife almak istediğinizden emin misiniz?`);
+        if (!confirmed) return;
+      }
+      try {
+        const response = await fetch(`/api/courses/${courseId}/toggle-status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Kurs durumu değiştirilemedi');
+        }
+        const result = await response.json();
+        alert(result.message);
+        // Refresh the course list to show updated status
+        await refreshCourseList();
+      } catch (err) {
+        alert('Hata: ' + err.message);
+        console.error('Kurs durumu değiştirme hatası:', err);
+      }
     }
 
   </script>
