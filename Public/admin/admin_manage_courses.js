@@ -115,21 +115,28 @@ async function refreshCourseList() {
 
 // Toggle course status (activate/deactivate)
 async function toggleCourseStatus(courseId) {
+  const course = allCourses.find(c => c.id === courseId);
+  if (!course) {
+    alert('Kurs bulunamadı.');
+    return;
+  }
+  // Eğer kurs aktifse ve pasife alınacaksa, onay iste
+  if (course.status === 'Aktif') {
+    const confirmed = confirm(`"${course.name}" kursunu pasife almak istediğinizden emin misiniz?`);
+    if (!confirmed) return;
+  }
   try {
     const response = await fetch(`/api/courses/${courseId}/toggle-status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
     });
-    
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || 'Kurs durumu değiştirilemedi');
     }
-    
     const result = await response.json();
     alert(result.message);
-    
     // Refresh the course list to show updated status
     await refreshCourseList();
   } catch (err) {
