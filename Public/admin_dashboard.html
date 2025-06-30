@@ -356,6 +356,10 @@
         <select id="levelFilter">
           <option value="">Tümü</option>
         </select>
+        <label for="courseId">Kurs</label>
+        <select id="courseId" name="courseId" required>
+          <option value="">Yükleniyor...</option>
+        </select>
         <label for="programDay">Gün</label>
         <select id="programDay" name="programDay" required>
           <option value="">Gün seçiniz</option>
@@ -366,10 +370,6 @@
           <option value="Cuma">Cuma</option>
           <option value="Cumartesi">Cumartesi</option>
           <option value="Pazar">Pazar</option>
-        </select>
-        <label for="courseId">Kurs</label>
-        <select id="courseId" name="courseId" required>
-          <option value="">Yükleniyor...</option>
         </select>
         <label for="programId">Program Saati</label>
         <select id="programId" name="programId" required>
@@ -1004,6 +1004,7 @@
       window.open('/passive_teachers.html', '_blank', 'width=1200,height=800');
     }
 
+    
     // Modal açma/kapama
     if (openStudentModalBtn && studentModal && closeStudentModalBtn) {
       openStudentModalBtn.addEventListener('click', () => {
@@ -1182,54 +1183,7 @@
       }
     });
 
-    async function loadStudentModalCategoriesAndLevels() {
-      const catSelect = document.getElementById('categoryFilter');
-      catSelect.innerHTML = '<option value="">Tümü</option>';
-      try {
-        const [catRes, levelRes] = await Promise.all([
-          fetch('/api/categories', { credentials: 'include' }),
-          fetch('/api/course-levels', { credentials: 'include' })
-        ]);
-        const cats = await catRes.json();
-        const levels = await levelRes.json();
-        if (cats.categories && cats.categories.length > 0) {
-          cats.categories.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.Category_ID;
-            opt.textContent = c.Category_Name;
-            catSelect.appendChild(opt);
-          });
-        }
-        const levelSelect = document.getElementById('levelFilter');
-        levelSelect.innerHTML = '<option value="">Tümü</option>';
-        levels.levels.forEach(lvl => {
-          const opt = document.createElement('option');
-          opt.value = lvl;
-          opt.textContent = lvl;
-          levelSelect.appendChild(opt);
-        });
-      } catch (err) {
-        catSelect.innerHTML = '<option value="">Kategoriler yüklenemedi</option>';
-        console.error('Kategoriler yüklenemedi:', err);
-      }
-    }
-
-    if (openStudentModalBtn && studentModal && closeStudentModalBtn) {
-      openStudentModalBtn.addEventListener('click', () => {
-        document.querySelector('#studentModal h1').textContent = 'Öğrenci Kayıt Formu';
-        form.reset();
-        form.guardianId.value = '';
-        form.guardianSearch.value = '';
-        studentModal.style.display = 'flex';
-        loadStudentModalCategoriesAndLevels(); // <-- Ensure categories are loaded every time
-      });
-      closeStudentModalBtn.addEventListener('click', () => {
-        studentModal.style.display = 'none';
-      });
-      window.addEventListener('click', (e) => {
-        if (e.target === studentModal) studentModal.style.display = 'none';
-      });
-    }
+    loadStudentModalCategoriesAndLevels();
 
     async function loadTeacherCategories() {
       const categorySelect = document.getElementById('teacherCategoryId');

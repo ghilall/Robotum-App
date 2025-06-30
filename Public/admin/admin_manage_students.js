@@ -293,25 +293,34 @@ window.loadSearchFilters = async function loadSearchFilters() {
 
 window.loadAllCourses = async function loadAllCourses() {
   const courseSelect = document.getElementById('courseSearch');
-  courseSelect.innerHTML = '<option value="">Tüm kurslar</option>';
+  courseSelect.innerHTML = '';
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Tüm kurslar';
+  courseSelect.appendChild(defaultOption);
   try {
     const response = await fetch('/api/courses', { credentials: 'include' });
     const data = await response.json();
-    data.courses.forEach(course => {
-      const option = document.createElement('option');
-      option.value = course.Course_ID;
-      option.textContent = course.Course_Name;
-      courseSelect.appendChild(option);
-    });
+    if (!data.courses || data.courses.length === 0) {
+      courseSelect.innerHTML = '<option value="">Kurs bulunamadı</option>';
+    } else {
+      data.courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.Course_ID;
+        option.textContent = course.Course_Name;
+        courseSelect.appendChild(option);
+      });
+    }
   } catch (error) {
-    console.error('Error loading courses:', error);
+    courseSelect.innerHTML = '<option value="">Kurslar alınamadı</option>';
   }
+  programSelect.innerHTML = '<option value="">Saat seçiniz</option>';
 }
 
 window.updateCourseOptions = async function updateCourseOptions() {
   const categoryId = document.getElementById('categorySearch').value;
   const courseSelect = document.getElementById('courseSearch');
-  courseSelect.innerHTML = '<option value="">Tüm kurslar</option>';
+  courseSelect.innerHTML = '';
   if (!categoryId) {
     await window.loadAllCourses();
     return;
@@ -330,6 +339,7 @@ window.updateCourseOptions = async function updateCourseOptions() {
   } catch (error) {
     console.error('Error loading filtered courses:', error);
   }
+  programSelect.innerHTML = '<option value="">Saat seçiniz</option>';
 }
 
 window.loadStudentModalCategoriesAndLevels = async function loadStudentModalCategoriesAndLevels() {
@@ -422,50 +432,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Load categories and levels, then all courses
-  async function loadCategoriesAndLevels() {
-    categoryFilter.innerHTML = '<option value="">Tümü</option>';
-    try {
-      const [catRes, levelRes] = await Promise.all([
-        fetch('/api/categories', { credentials: 'include' }),
-        fetch('/api/course-levels', { credentials: 'include' })
-      ]);
-      const cats = await catRes.json();
-      const levels = await levelRes.json();
-      if (cats.categories && cats.categories.length > 0) {
-        cats.categories.forEach(c => {
-          const opt = document.createElement('option');
-          opt.value = c.Category_ID;
-          opt.textContent = c.Category_Name;
-          categoryFilter.appendChild(opt);
-        });
-      }
-      levelFilter.innerHTML = '<option value="">Tümü</option>';
-      levels.levels.forEach(lvl => {
-        const opt = document.createElement('option');
-        opt.value = lvl;
-        opt.textContent = lvl;
-        levelFilter.appendChild(opt);
-      });
-      await loadAllCourses();
-    } catch (err) {
-      categoryFilter.innerHTML = '<option value="">Kategoriler yüklenemedi</option>';
-      console.error('Kategoriler yüklenemedi:', err);
-    }
-  }
+  
 
   // Fetch and filter courses based on selected category & level
   async function updateCourseOptions() {
     const categoryId = categoryFilter.value;
     const level = levelFilter.value;
-    courseSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+    courseSelect.innerHTML = '';
     try {
       const params = new URLSearchParams();
       if (categoryId) params.append('categoryId', categoryId);
       if (level) params.append('level', level);
       const response = await fetch(`/api/courses?${params.toString()}`, { credentials: 'include' });
       const data = await response.json();
-      courseSelect.innerHTML = '';
       if (!data.courses || data.courses.length === 0) {
         courseSelect.innerHTML = '<option value="">Uygun kurs bulunamadı</option>';
       } else {
@@ -489,18 +468,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Load all courses without filters
   async function loadAllCourses() {
-    courseSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+    courseSelect.innerHTML = '';
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Tüm kurslar';
+    courseSelect.appendChild(defaultOption);
     try {
       const response = await fetch('/api/courses', { credentials: 'include' });
       const data = await response.json();
-      courseSelect.innerHTML = '';
       if (!data.courses || data.courses.length === 0) {
         courseSelect.innerHTML = '<option value="">Kurs bulunamadı</option>';
       } else {
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = 'Kurs seçiniz';
-        courseSelect.appendChild(defaultOption);
         data.courses.forEach(course => {
           const option = document.createElement('option');
           option.value = course.Course_ID;
@@ -509,7 +487,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       }
     } catch (err) {
-      console.error('Kurslar yüklenemedi:', err);
       courseSelect.innerHTML = '<option value="">Kurslar alınamadı</option>';
     }
     programSelect.innerHTML = '<option value="">Saat seçiniz</option>';

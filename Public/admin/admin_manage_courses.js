@@ -385,4 +385,76 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Kurs eklenirken hata oluştu: ' + error.message);
     }
   });
+
+  async function loadAllCourses() {
+    const courseSelect = document.getElementById('courseId');
+    courseSelect.innerHTML = '<option value="">Kurs seçiniz</option>';
+    try {
+      const response = await fetch('/api/courses', { credentials: 'include' });
+      const data = await response.json();
+      if (!data.courses || data.courses.length === 0) {
+        courseSelect.innerHTML = '<option value="">Kurs bulunamadı</option>';
+      } else {
+        data.courses.forEach(course => {
+          const option = document.createElement('option');
+          option.value = course.Course_ID;
+          option.textContent = course.Course_Name;
+          courseSelect.appendChild(option);
+        });
+      }
+    } catch (err) {
+      courseSelect.innerHTML = '<option value="">Kurslar alınamadı</option>';
+    }
+    const programSelect = document.getElementById('hourSelect');
+    programSelect.innerHTML = '<option value="">Saat seçiniz</option>';
+  }
 });
+
+async function loadStudentModalCategoriesAndLevels() {
+  const catSelect = document.getElementById('categoryFilter');
+  catSelect.innerHTML = '<option value="">Tümü</option>';
+  try {
+    const [catRes, levelRes] = await Promise.all([
+      fetch('/api/categories', { credentials: 'include' }),
+      fetch('/api/course-levels', { credentials: 'include' })
+    ]);
+    const cats = await catRes.json();
+    const levels = await levelRes.json();
+    if (cats.categories && cats.categories.length > 0) {
+      cats.categories.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.Category_ID;
+        opt.textContent = c.Category_Name;
+        catSelect.appendChild(opt);
+      });
+    }
+    const levelSelect = document.getElementById('levelFilter');
+    levelSelect.innerHTML = '<option value="">Tümü</option>';
+    levels.levels.forEach(lvl => {
+      const opt = document.createElement('option');
+      opt.value = lvl;
+      opt.textContent = lvl;
+      levelSelect.appendChild(opt);
+    });
+  } catch (err) {
+    catSelect.innerHTML = '<option value="">Kategoriler yüklenemedi</option>';
+    console.error('Kategoriler yüklenemedi:', err);
+  }
+}
+
+if (openStudentModalBtn && studentModal && closeStudentModalBtn) {
+  openStudentModalBtn.addEventListener('click', () => {
+    document.querySelector('#studentModal h1').textContent = 'Öğrenci Kayıt Formu';
+    form.reset();
+    form.guardianId.value = '';
+    form.guardianSearch.value = '';
+    studentModal.style.display = 'flex';
+    loadStudentModalCategoriesAndLevels(); // <-- Ensure categories are loaded every time
+  });
+  closeStudentModalBtn.addEventListener('click', () => {
+    studentModal.style.display = 'none';
+  });
+  window.addEventListener('click', (e) => {
+    if (e.target === studentModal) studentModal.style.display = 'none';
+  });
+}
