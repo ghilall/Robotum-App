@@ -413,6 +413,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const guardianSearch = document.getElementById('guardianSearch');
   const guardianResults = document.getElementById('guardianResults');
   const guardianIdInput = document.getElementById('guardianId');
+  const programsContainer = document.getElementById('programsContainer');
+  const addProgramBtn = document.getElementById('addProgramBtn');
 
   // Modal open/close
   if (openStudentModalBtn && studentModal && closeStudentModalBtn && form) {
@@ -425,132 +427,118 @@ document.addEventListener('DOMContentLoaded', function() {
       loadCategoriesAndLevels();
       programSelect.innerHTML = '<option value="">Saat seçiniz</option>';
       if (programDaySelect) programDaySelect.value = '';
+      document.getElementById('selectedGuardianDisplay').textContent = '';
     });
     closeStudentModalBtn.addEventListener('click', () => {
       studentModal.style.display = 'none';
+      document.getElementById('selectedGuardianDisplay').textContent = '';
     });
     window.addEventListener('click', (e) => {
       if (e.target === studentModal) studentModal.style.display = 'none';
     });
   }
 
-  
-
-  // Fetch and filter courses based on selected category & level
-  async function updateCourseOptions() {
-    const categoryId = categoryFilter.value;
-    const level = levelFilter.value;
-    courseSelect.innerHTML = '';
-    try {
-      const params = new URLSearchParams();
-      if (categoryId) params.append('categoryId', categoryId);
-      if (level) params.append('level', level);
-      const response = await fetch(`/api/courses?${params.toString()}`, { credentials: 'include' });
-      const data = await response.json();
-      if (!data.courses || data.courses.length === 0) {
-        courseSelect.innerHTML = '<option value="">Uygun kurs bulunamadı</option>';
-      } else {
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = 'Kurs seçiniz';
-        courseSelect.appendChild(defaultOption);
-        data.courses.forEach(course => {
-          const option = document.createElement('option');
-          option.value = course.Course_ID;
-          option.textContent = course.Course_Name;
-          courseSelect.appendChild(option);
-        });
-      }
-    } catch (err) {
-      console.error('Kurslar yüklenemedi:', err);
-      courseSelect.innerHTML = '<option value="">Kurslar alınamadı</option>';
+  function createProgramRow() {
+    const row = document.createElement('div');
+    row.className = 'program-row';
+    row.style.display = 'flex';
+    row.style.gap = '12px';
+    row.style.marginBottom = '14px';
+    row.style.background = '#f8f9fa';
+    row.style.padding = '16px 12px';
+    row.style.borderRadius = '10px';
+    row.style.alignItems = 'center';
+    row.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+    row.innerHTML = `
+      <select class="category-select" required style="min-width:120px; flex:1; padding:6px 8px; border-radius:6px; border:1px solid #bbb;"></select>
+      <select class="level-select" required style="min-width:100px; flex:1; padding:6px 8px; border-radius:6px; border:1px solid #bbb;"></select>
+      <select class="course-select" required style="min-width:140px; flex:2; padding:6px 8px; border-radius:6px; border:1px solid #bbb;"></select>
+      <select class="day-select" style="min-width:110px; flex:1; padding:6px 8px; border-radius:6px; border:1px solid #bbb;">
+        <option value="">Gün</option>
+        <option value="Pazartesi">Pazartesi</option>
+        <option value="Salı">Salı</option>
+        <option value="Çarşamba">Çarşamba</option>
+        <option value="Perşembe">Perşembe</option>
+        <option value="Cuma">Cuma</option>
+        <option value="Cumartesi">Cumartesi</option>
+        <option value="Pazar">Pazar</option>
+      </select>
+      <select class="program-select" required style="min-width:160px; flex:2; padding:6px 8px; border-radius:6px; border:1px solid #bbb;"></select>
+      <button type="button" class="remove-program-btn" style="background:#ffefef; color:#d33; border:1px solid #d33; border-radius:6px; padding:6px 12px; font-size:1.1em; cursor:pointer;">-</button>
+    `;
+    loadCategories(row.querySelector('.category-select'));
+    loadLevels(row.querySelector('.level-select'));
+    row.querySelector('.category-select').addEventListener('change', function() {
+      loadCourses(row.querySelector('.course-select'), this.value, row.querySelector('.level-select').value);
+    });
+    row.querySelector('.level-select').addEventListener('change', function() {
+      loadCourses(row.querySelector('.course-select'), row.querySelector('.category-select').value, this.value);
+    });
+    // When course or day changes, update programs
+    const courseSelect = row.querySelector('.course-select');
+    const daySelect = row.querySelector('.day-select');
+    const programSelect = row.querySelector('.program-select');
+    function updatePrograms() {
+      loadPrograms(programSelect, courseSelect.value, daySelect.value);
     }
-    programSelect.innerHTML = '<option value="">Saat seçiniz</option>';
+    courseSelect.addEventListener('change', updatePrograms);
+    daySelect.addEventListener('change', updatePrograms);
+    row.querySelector('.remove-program-btn').onclick = () => row.remove();
+    return row;
   }
-
-  // Load all courses without filters
-  async function loadAllCourses() {
-    courseSelect.innerHTML = '';
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = 'Tüm kurslar';
-    courseSelect.appendChild(defaultOption);
-    try {
-      const response = await fetch('/api/courses', { credentials: 'include' });
-      const data = await response.json();
-      if (!data.courses || data.courses.length === 0) {
-        courseSelect.innerHTML = '<option value="">Kurs bulunamadı</option>';
-      } else {
-        data.courses.forEach(course => {
-          const option = document.createElement('option');
-          option.value = course.Course_ID;
-          option.textContent = course.Course_Name;
-          courseSelect.appendChild(option);
-        });
-      }
-    } catch (err) {
-      courseSelect.innerHTML = '<option value="">Kurslar alınamadı</option>';
-    }
-    programSelect.innerHTML = '<option value="">Saat seçiniz</option>';
+  // Add first row by default
+  programsContainer.appendChild(createProgramRow());
+  addProgramBtn.onclick = () => {
+    programsContainer.appendChild(createProgramRow());
+  };
+  function loadCategories(select) {
+    fetch('/api/categories').then(res => res.json()).then(data => {
+      select.innerHTML = '<option value="">Kategori</option>' +
+        data.categories.map(cat => `<option value="${cat.Category_ID}">${cat.Category_Name}</option>`).join('');
+    });
   }
-
-  // Update courses when category or level changes
-  categoryFilter.addEventListener('change', updateCourseOptions);
-  levelFilter.addEventListener('change', updateCourseOptions);
-
-  // Listen for changes on both course and day selects
-  courseSelect.addEventListener('change', loadAndFilterPrograms);
-  programDaySelect.addEventListener('change', loadAndFilterPrograms);
-
-  async function loadAndFilterPrograms() {
-    const courseId = courseSelect.value;
-    const selectedDay = programDaySelect.value;
-    programSelect.innerHTML = '';
+  function loadLevels(select) {
+    fetch('/api/course-levels').then(res => res.json()).then(data => {
+      select.innerHTML = '<option value="">Seviye</option>' +
+        data.levels.map(level => `<option value="${level}">${level}</option>`).join('');
+    });
+  }
+  function loadCourses(select, categoryId, level) {
+    let url = '/api/courses?';
+    if (categoryId) url += `categoryId=${categoryId}&`;
+    if (level) url += `level=${level}`;
+    fetch(url).then(res => res.json()).then(data => {
+      select.innerHTML = '<option value="">Kurs</option>' +
+        data.courses.map(course => `<option value="${course.Course_ID}">${course.Course_Name}</option>`).join('');
+    });
+  }
+  function loadPrograms(select, courseId, day) {
     if (!courseId) {
-      programSelect.innerHTML = '<option value="">Saat seçiniz</option>';
+      select.innerHTML = '<option value="">Program</option>';
       return;
     }
-    try {
-      const res = await fetch(`/api/programs/by-course/${courseId}`, { credentials: 'include' });
-      const data = await res.json();
-      let programs = data.programs || [];
-      if (selectedDay) {
-        programs = programs.filter(p => p.Day === selectedDay);
+    fetch(`/api/programs/by-course/${courseId}`).then(res => res.json()).then(data => {
+      let programs = data.programs;
+      if (day) {
+        programs = programs.filter(p => p.Day === day);
       }
-      if (programs.length === 0) {
-        const option = document.createElement('option');
-        option.textContent = 'Saat bulunamadı';
-        option.disabled = true;
-        programSelect.appendChild(option);
-        return;
-      }
-      const defaultOption = document.createElement('option');
-      defaultOption.value = '';
-      defaultOption.textContent = 'Program saati seçiniz';
-      defaultOption.disabled = true;
-      defaultOption.selected = true;
-      programSelect.appendChild(defaultOption);
-      programs.forEach(p => {
-        const current = parseInt(p.Current_Count);
-        const capacity = parseInt(p.Capacity);
-        const isFull = current >= capacity;
-        const option = document.createElement('option');
-        option.value = p.Program_ID;
-        option.textContent = `${p.Day} - ${p.Start_Time.slice(0, 5)}-${p.End_Time.slice(0, 5)} (${current}/${capacity})`;
-        if (isFull) {
-          option.disabled = true;
-          option.style.color = 'red';
-          option.textContent += ' (DOLU)';
-        }
-        programSelect.appendChild(option);
-      });
-    } catch (err) {
-      console.error('Saatler alınamadı:', err);
-      programSelect.innerHTML = '<option value="">Saatler alınamadı</option>';
-    }
+      select.innerHTML = '<option value="">Program</option>' +
+        programs.map(p => `<option value="${p.Program_ID}">${p.Day} ${p.Start_Time} - ${p.End_Time}</option>`).join('');
+    });
   }
+  // On form submit, gather all selected program IDs
+  const studentForm = document.getElementById('studentRegistrationForm');
+  studentForm.addEventListener('submit', function(e) {
+    // ...existing validation...
+    const selectedProgramIds = Array.from(programsContainer.querySelectorAll('.program-select'))
+      .map(sel => sel.value)
+      .filter(val => val);
+    // Add to form data before sending to backend
+    // Example: formData.append('selectedProgramIds', JSON.stringify(selectedProgramIds));
+    // Or, if using fetch: body: JSON.stringify({ ..., selectedProgramIds })
+    // ...rest of your submit logic...
+  });
 
-  // Guardian live search
   guardianSearch.addEventListener('input', async () => {
     const query = guardianSearch.value.trim();
     const queryNormalized = query.toLocaleLowerCase('tr');
@@ -560,10 +548,23 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const response = await fetch(`/api/guardians/search?query=${encodeURIComponent(queryNormalized)}`, { credentials: 'include' });
       const results = await response.json();
-      if (results.length === 0) {
+      // Enhanced filtering: match if query is in first name, last name, or their combination (any order)
+      const filteredResults = results.filter(guardian => {
+        const first = guardian.First_Name.toLocaleLowerCase('tr');
+        const last = guardian.Last_Name.toLocaleLowerCase('tr');
+        const full1 = `${first} ${last}`;
+        const full2 = `${last} ${first}`;
+        return (
+          first.includes(queryNormalized) ||
+          last.includes(queryNormalized) ||
+          full1.includes(queryNormalized) ||
+          full2.includes(queryNormalized)
+        );
+      });
+      if (filteredResults.length === 0) {
         guardianResults.innerHTML = '<div>Veli bulunamadı</div>';
       } else {
-        results.forEach(guardian => {
+        filteredResults.forEach(guardian => {
           const div = document.createElement('div');
           div.textContent = `${guardian.First_Name} ${guardian.Last_Name} (${guardian.Email})`;
           div.dataset.id = guardian.Guardian_ID;
@@ -571,6 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
             guardianSearch.value = `${guardian.First_Name} ${guardian.Last_Name}`;
             guardianIdInput.value = guardian.Guardian_ID;
             guardianResults.style.display = 'none';
+            document.getElementById('selectedGuardianDisplay').textContent = `Seçili Veli: ${guardian.First_Name} ${guardian.Last_Name}`;
           });
           guardianResults.appendChild(div);
         });
@@ -584,47 +586,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!guardianSearch.contains(e.target) && !guardianResults.contains(e.target)) {
       guardianResults.style.display = 'none';
     }
-  });
-
-  // Form submit
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const firstName = form.firstName.value.trim();
-    const lastName = form.lastName.value.trim();
-    const birthDate = form.birthDate.value;
-    const courseId = form.courseId.value;
-    const guardianId = form.guardianId.value;
-    const programId = form.programId.value;
-    if (!guardianId) {
-      alert('Lütfen bir veli seçiniz.');
-      return;
-    }
-    if (!programId) {
-      alert('Lütfen bir program saati seçiniz.');
-      return;
-    }
-    const data = { firstName, lastName, birthDate, courseId, guardianId, selectedProgramIds: [programId] };
-    fetch('/student_register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(data)
-    })
-      .then(response => response.json())
-      .then(result => {
-        if (result.message) {
-          alert(result.message);
-          studentModal.style.display = 'none';
-          // Optionally reload student list
-          if (typeof window.loadStudentList === 'function') window.loadStudentList();
-        } else if (result.error) {
-          alert(result.error);
-        }
-      })
-      .catch(error => {
-        console.error('Request error:', error);
-        alert('Sunucuya bağlanılamadı.');
-      });
   });
 });
 
@@ -1300,3 +1261,134 @@ window.displayStudentList = function displayStudentListWithEdit(groupedStudents)
 
 // Make sure the student list always uses the version with the Kurs Değiştir button
 window.displayStudentList = window.displayStudentListWithEdit;
+
+let currentAssignStudentId = null;
+
+// Open assign programs modal after registration or from edit
+function openAssignProgramsModal(studentId) {
+  currentAssignStudentId = studentId;
+  document.getElementById('assignProgramsModal').style.display = 'flex';
+  const container = document.getElementById('assignProgramsContainer');
+  container.innerHTML = '';
+  container.appendChild(createAssignProgramRow());
+}
+
+document.getElementById('closeAssignProgramsModalBtn').onclick = function() {
+  document.getElementById('assignProgramsModal').style.display = 'none';
+  currentAssignStudentId = null;
+};
+
+function createAssignProgramRow() {
+  const row = document.createElement('div');
+  row.className = 'program-row';
+  row.style.display = 'flex';
+  row.style.flexWrap = 'wrap';
+  row.style.gap = '12px';
+  row.style.marginBottom = '14px';
+  row.style.background = '#f8f9fa';
+  row.style.padding = '16px 12px';
+  row.style.borderRadius = '10px';
+  row.style.alignItems = 'center';
+  row.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+  row.innerHTML = `
+    <div style="display:flex; flex-direction:column; flex:1; min-width:120px;">
+      <label style="font-size:0.95em; margin-bottom:2px;">Kategori</label>
+      <select class="category-select" required style="padding:6px 8px; border-radius:6px; border:1px solid #bbb;"></select>
+    </div>
+    <div style="display:flex; flex-direction:column; flex:1; min-width:100px;">
+      <label style="font-size:0.95em; margin-bottom:2px;">Seviye</label>
+      <select class="level-select" required style="padding:6px 8px; border-radius:6px; border:1px solid #bbb;"></select>
+    </div>
+    <div style="display:flex; flex-direction:column; flex:2; min-width:140px;">
+      <label style="font-size:0.95em; margin-bottom:2px;">Kurs</label>
+      <select class="course-select" required style="padding:6px 8px; border-radius:6px; border:1px solid #bbb;"></select>
+    </div>
+    <div style="display:flex; flex-direction:column; flex:1; min-width:110px;">
+      <label style="font-size:0.95em; margin-bottom:2px;">Gün</label>
+      <select class="day-select" style="padding:6px 8px; border-radius:6px; border:1px solid #bbb;">
+        <option value="">Gün</option>
+        <option value="Pazartesi">Pazartesi</option>
+        <option value="Salı">Salı</option>
+        <option value="Çarşamba">Çarşamba</option>
+        <option value="Perşembe">Perşembe</option>
+        <option value="Cuma">Cuma</option>
+        <option value="Cumartesi">Cumartesi</option>
+        <option value="Pazar">Pazar</option>
+      </select>
+    </div>
+    <div style="display:flex; flex-direction:column; flex:2; min-width:160px;">
+      <label style="font-size:0.95em; margin-bottom:2px;">Program</label>
+      <select class="program-select" required style="padding:6px 8px; border-radius:6px; border:1px solid #bbb;"></select>
+    </div>
+    <div style="display:flex; flex-direction:column; justify-content:flex-end;">
+      <button type="button" class="remove-program-btn" style="background:#ffefef; color:#d33; border:1px solid #d33; border-radius:6px; padding:6px 12px; font-size:1.1em; cursor:pointer; margin-top:18px;">-</button>
+    </div>
+  `;
+  loadCategories(row.querySelector('.category-select'));
+  loadLevels(row.querySelector('.level-select'));
+  const courseSelect = row.querySelector('.course-select');
+  const daySelect = row.querySelector('.day-select');
+  const programSelect = row.querySelector('.program-select');
+  row.querySelector('.category-select').addEventListener('change', function() {
+    loadCourses(courseSelect, this.value, row.querySelector('.level-select').value);
+  });
+  row.querySelector('.level-select').addEventListener('change', function() {
+    loadCourses(courseSelect, row.querySelector('.category-select').value, this.value);
+  });
+  function updatePrograms() {
+    loadPrograms(programSelect, courseSelect.value, daySelect.value);
+  }
+  courseSelect.addEventListener('change', updatePrograms);
+  daySelect.addEventListener('change', updatePrograms);
+  row.querySelector('.remove-program-btn').onclick = () => row.remove();
+  return row;
+}
+
+document.getElementById('assignProgramsForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  if (!currentAssignStudentId) return;
+  const selectedProgramIds = Array.from(document.getElementById('assignProgramsContainer').querySelectorAll('.program-select'))
+    .map(sel => sel.value)
+    .filter(val => val);
+  if (selectedProgramIds.length === 0) {
+    alert('Lütfen en az bir program seçin.');
+    return;
+  }
+  // Send to backend
+  const res = await fetch(`/api/admin/students/${currentAssignStudentId}/enrollments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ programIds: selectedProgramIds })
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert('Programlar başarıyla eklendi!');
+    document.getElementById('assignProgramsModal').style.display = 'none';
+    currentAssignStudentId = null;
+    // Optionally reload student list
+    if (typeof window.loadStudentList === 'function') window.loadStudentList();
+  } else {
+    alert(data.error || 'Bir hata oluştu.');
+  }
+});
+
+// Open assign programs modal from edit modal
+if (document.getElementById('openAssignProgramsModalBtn')) {
+  document.getElementById('openAssignProgramsModalBtn').onclick = function() {
+    const studentId = window.editingStudentId;
+    if (studentId) openAssignProgramsModal(studentId);
+  };
+}
+
+// After student registration, call openAssignProgramsModal(newStudentId)
+// ... existing code ...
+
+document.addEventListener('DOMContentLoaded', function() {
+  const addAssignProgramBtn = document.getElementById('addAssignProgramBtn');
+  if (addAssignProgramBtn) {
+    addAssignProgramBtn.onclick = function() {
+      document.getElementById('assignProgramsContainer').appendChild(createAssignProgramRow());
+    };
+  }
+});

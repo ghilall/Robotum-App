@@ -333,9 +333,9 @@
 
   <!-- Öğrenci Kayıt Modalı -->
   <div id="studentModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); justify-content:center; align-items:center;">
-    <div class="registration-container" style="position:relative; margin:auto;">
+    <div class="registration-container" style="position:relative; margin:auto; max-width:600px; width:95vw; min-width:350px; background:white; padding:40px 30px; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.18); overflow-y:auto; max-height:95vh;">
       <button id="closeStudentModalBtn" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
-      <h1>Öğrenci Kayıt Formu</h1>
+      <h1 style="margin-bottom:18px;">Öğrenci Kayıt Formu</h1>
       <form id="studentRegistrationForm">
         <label for="firstName">Ad</label>
         <input type="text" id="firstName" name="firstName" required />
@@ -343,38 +343,12 @@
         <input type="text" id="lastName" name="lastName" required />
         <label for="birthDate">Doğum Tarihi</label>
         <input type="date" id="birthDate" name="birthDate" required />
-        <label for="categoryFilter">Kategori (opsiyonel)</label>
-        <select id="categoryFilter">
-          <option value="">Tümü</option>
-        </select>
-        <label for="levelFilter">Seviye (opsiyonel)</label>
-        <select id="levelFilter">
-          <option value="">Tümü</option>
-        </select>
-        <label for="courseId">Kurs</label>
-        <select id="courseId" name="courseId" required>
-          <option value="">Yükleniyor...</option>
-        </select>
-        <label for="studentProgramDay">Gün</label>
-        <select id="studentProgramDay" name="programDay" required>
-          <option value="">Gün seçiniz</option>
-          <option value="Pazartesi">Pazartesi</option>
-          <option value="Salı">Salı</option>
-          <option value="Çarşamba">Çarşamba</option>
-          <option value="Perşembe">Perşembe</option>
-          <option value="Cuma">Cuma</option>
-          <option value="Cumartesi">Cumartesi</option>
-          <option value="Pazar">Pazar</option>
-        </select>
-        <label for="programId">Program Saati</label>
-        <select id="programId" name="programId" required>
-          <option value="">Saat seçiniz</option>
-        </select>
         <label for="guardianSearch">Veli Ara</label>
         <input type="text" id="guardianSearch" placeholder="İsimle ara..." autocomplete="off" />
         <div id="guardianResults"></div>
+        <div id="selectedGuardianDisplay" style="margin: 8px 0; font-weight: bold; color: #2a2;"></div>
         <input type="hidden" id="guardianId" name="guardianId" required />
-        <button type="submit">Kaydı Tamamla</button>
+        <button type="submit" style="margin-top:18px;">Kaydı Tamamla</button>
       </form>
     </div>
   </div>
@@ -564,6 +538,21 @@
         <input type="date" id="editBirthDate" name="birthDate" required />
         <!-- Add other editable attributes here as needed -->
         <button type="submit">Kaydet</button>
+        <button type="button" id="openAssignProgramsModalBtn" style="margin-left:16px; background:#e0eaff; color:#1a3a7c; border:1px solid #1a3a7c; border-radius:6px; padding:8px 16px; font-size:1em; cursor:pointer;">Kurs/Program Ekle</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Kurs/Program Ekle Modalı -->
+  <div id="assignProgramsModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); justify-content:center; align-items:center;">
+    <div class="registration-container" style="position:relative; margin:auto; max-width:600px; width:95vw; min-width:350px; background:white; padding:40px 30px; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.18); overflow-y:auto; max-height:95vh;">
+      <button id="closeAssignProgramsModalBtn" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+      <h1 style="margin-bottom:18px;">Kurs/Program Ekle</h1>
+      <form id="assignProgramsForm">
+        <div style="margin-bottom: 8px; font-weight: bold; font-size: 1.1em;">Kurs ve Program Seçimi</div>
+        <button type="button" id="addAssignProgramBtn" style="margin-bottom: 16px; padding: 6px 18px; font-size: 1.1em; border-radius: 6px; background: #f0f0f0; border: 1px solid #bbb; cursor: pointer;">+ Kurs/Program Ekle</button>
+        <div id="assignProgramsContainer" style="margin-bottom: 12px;"></div>
+        <button type="submit" style="margin-top:18px;">Kaydı Tamamla</button>
       </form>
     </div>
   </div>
